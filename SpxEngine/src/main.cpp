@@ -1,8 +1,25 @@
+#include "log.h" // must be included before glfw3.h to avoid conflicts
 #include "engine.h"
-#include "log.h"
+#include <iostream>
+
 
 int main() {
-	HelloFromEngine();
-	LOG_INFO("Hello from Editor");
-	return 0;
+    Engine engine;
+    EngineConfig cfg;
+    cfg.windowConfig.width = 1280;
+    cfg.windowConfig.height = 720;
+    cfg.windowConfig.title = "SPXEngine - Sandbox";
+    cfg.windowConfig.vsync = true;
+	cfg.enableImGui = true; // Enable ImGui for GUI rendering
+    
+	// Initialize engine with config 
+    if (!engine.Initialize(cfg)) {
+		LOG_DEBUG("Failed to initialize engine");
+        return -1;
+    }
+
+    // Blocking loop managed by engine
+    engine.Run();
+
+    return 0;
 }

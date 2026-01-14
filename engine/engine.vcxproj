@@ -119,6 +119,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)engine\assets\;$(SolutionDir)engine\vendors\;$(SolutionDir)engine\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -137,6 +138,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)engine\assets\;$(SolutionDir)engine\vendors\;$(SolutionDir)engine\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -148,10 +150,37 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\engine.cpp" />
+    <ClCompile Include="src\entity.cpp" />
+    <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\input.cpp" />
+    <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="src\imgui.cpp" />
+    <ClCompile Include="vendors\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h" />
+    <ClInclude Include="include\entity.h" />
+    <ClInclude Include="include\input.h" />
     <ClInclude Include="include\log.h" />
+    <ClInclude Include="include\window.h" />
+    <ClInclude Include="vendors\imgui\imconfig.h" />
+    <ClInclude Include="vendors\imgui\imgui.h" />
+    <ClInclude Include="vendors\imgui\ImGuiAF.h" />
+    <ClInclude Include="vendors\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="vendors\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="vendors\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="vendors\imgui\imgui_internal.h" />
+    <ClInclude Include="vendors\imgui\imstb_rectpack.h" />
+    <ClInclude Include="vendors\imgui\imstb_textedit.h" />
+    <ClInclude Include="vendors\imgui\imstb_truetype.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\engine.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
