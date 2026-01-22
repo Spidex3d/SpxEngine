@@ -43,6 +43,10 @@ bool Engine::Initialize(const EngineConfig& config) {
     }
 
 	// ##################  ImGui initialization could go here  ####################
+    //window = std::make_unique<SpxWindow>(config.windowConfig);
+    //window->SetEnableDocking(config.enableDocking); // apply initial value
+
+
 	if (config.enableImGui) {
 		window->SetUpImGui(glfwwindow);
 		LOG_INFO("ImGui initialized");
@@ -65,9 +69,16 @@ bool Engine::Initialize(const EngineConfig& config) {
     lastTime_ = std::chrono::steady_clock::now();
     LOG_INFO("Engine initialized successfully");
     return true;
+
+   
+
+	
 }
 
 void Engine::Run() {
+    window->SetIcon(glfwwindow);
+   // window->MainDockSpace(nullptr);
+
     using clock = std::chrono::steady_clock;
     bool showGui = true; // persistent for the run session
 
@@ -88,6 +99,8 @@ void Engine::Run() {
             window->PollEvents();
         }
 
+ 
+
         // 2) Start ImGui frame (only if enabled)
         if (config_.enableImGui) {
             window->NewImguiFrame(glfwwindow);
@@ -95,6 +108,24 @@ void Engine::Run() {
             // 3) Build GUI (only add windows when shown)
             if (showGui) {
                 ImGui::Begin("Editor");
+
+                //bool dockingEnabled = window->GetEnableDocking();
+                //if (ImGui::Checkbox("Enable Docking", &dockingEnabled)) {
+                //    // user changed the checkbox -> update window and ImGui IO
+                //    window->SetEnableDocking(dockingEnabled);
+
+                //    ImGuiIO& io = ImGui::GetIO();
+                //    if (dockingEnabled) {
+                //        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+                //    }
+                //    else {
+                //        io.ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
+                //    }
+                //    // If you also want to toggle viewports together:
+                //    // if (dockingEnabled) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+                //    // else io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+                //}
+
                 if (ImGui::Button(showGui ? "Play (stop GUI)" : "Stop (show GUI)")) {
                     showGui = !showGui;
                 }

@@ -8,6 +8,7 @@
 struct EngineConfig {
     WindowConfig windowConfig;
     bool enableImGui = false;
+	//bool enableDocking = true;
     float clearColor[4] = { 0.12f, 0.15f, 0.18f, 1.0f };
 };
 

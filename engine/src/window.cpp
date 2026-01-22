@@ -1,7 +1,11 @@
+#define STB_IMAGE_IMPLEMENTATION
 #include "window.h"
 #include "imgui\imgui.h"
 #include <imgui\imgui_impl_glfw.h>
 #include <imgui\imgui_impl_opengl3.h>
+#include "stb/stb_image.h"
+#include "../include/asset_path.h" // for GetAssetPath
+#include "../include/engine.h"
 #include "log.h"
 #include <iostream>
 
@@ -56,6 +60,15 @@ SpxWindow::SpxWindow(const WindowConfig& config)
     // Set vsync as requested
     SetVSync(config_.vsync);
 }
+
+void SpxWindow::SetIcon(GLFWwindow* window)
+{
+    std::string iconPath = GetAssetPath(ICON_PATH);
+    GLFWimage images[1];
+    images[0].pixels = stbi_load(iconPath.c_str(), &images[0].width, &images[0].height, 0, 4); // rgba = png
+    glfwSetWindowIcon(window, 1, images);
+    stbi_image_free(images[0].pixels);
+}
 // ############################################# ImGui Set up #############################################
 void SpxWindow::SetUpImGui(GLFWwindow* window) {
     //ImGui set up
@@ -80,11 +93,15 @@ void SpxWindow::SetUpImGui(GLFWwindow* window) {
     fontconfig.PixelSnapH = true;
     static const ImWchar ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
-    // set the fonts
     fontconfig.GlyphOffset = ImVec2(0.0f, 1.0f);
-    io.Fonts->AddFontFromFileTTF(FONT_PATH_MAIN, FONT_SIZE); // comic sans font type
-    io.Fonts->AddFontFromFileTTF(ROBOTO_REG_PATH, FONT_SIZE); // sandard font type
-    io.Fonts->AddFontFromFileTTF(FA_SOLID_PATH, FONT_SIZE, &fontconfig, ranges);
+    std::string fontPath = GetAssetPath(FONT_PATH_MAIN_REL);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), FONT_SIZE);
+
+    // set the fonts
+    //io.Fonts->AddFontFromFileTTF(FONT_PATH_MAIN_REL, FONT_SIZE); // comic sans font type
+    //io.Fonts->AddFontFromFileTTF(FONT_PATH_MAIN, FONT_SIZE); // comic sans font type
+    //io.Fonts->AddFontFromFileTTF(ROBOTO_REG_PATH, FONT_SIZE); // sandard font type
+   // io.Fonts->AddFontFromFileTTF(FA_SOLID_PATH, FONT_SIZE, &fontconfig, ranges);
 }
 void SpxWindow::NewImguiFrame(GLFWwindow* window)
 {
@@ -92,6 +109,66 @@ void SpxWindow::NewImguiFrame(GLFWwindow* window)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+}
+
+void SpxWindow::SetEnableDocking(bool enabled)
+{
+    enableDocking_ = enabled;
+}
+
+bool SpxWindow::GetEnableDocking() const
+{
+    return enableDocking_;
+}
+
+void SpxWindow::MainDockSpace(bool* p_open)  
+{
+   
+    if (enableDocking_) { // Docking on or off
+        static bool opt_fullscreen = true;
+        static bool opt_padding = false;
+        static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;// I changed this so my scean shows up on start up
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+        if (opt_fullscreen)
+        {
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+            window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        }
+        else
+        {
+            dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+        }
+
+        if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+            window_flags |= ImGuiWindowFlags_NoBackground;
+
+        if (!opt_padding)
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); // you can add a bit of padding  
+        ImGui::Begin("DockSpace Demo", p_open, window_flags);
+        if (!opt_padding)
+            ImGui::PopStyleVar();
+
+        if (opt_fullscreen)
+            ImGui::PopStyleVar(2);
+
+
+        // Submit the DockSpace to the ini file
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        }
+
+        ImGui::End();
+    }
 }
 
 void SpxWindow::RenderImGui(GLFWwindow* window)

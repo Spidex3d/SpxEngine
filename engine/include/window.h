@@ -5,7 +5,6 @@
 #include <imgui\imgui_internal.h>
 
 
-
 // Ensure GLFW doesn't include OpenGL headers (safe when glad is used to load GL)
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
@@ -28,11 +27,14 @@ const float FONT_SIZE = 28.0f; // comic
 const float SMALL_FONT_SIZE = 13.0f;
 const float TINY_FONT_SIZE = 10.0f;
 
-                                         
-constexpr const char* FONT_PATH_MAIN =  "fonts/comic.ttf";
+constexpr const char* FONT_PATH_MAIN_REL = "assets/fonts/comic.ttf";
+
+//constexpr const char* FONT_PATH_MAIN =  "C:/Users/marty/Desktop/SPXEngine/SPXEngine/SpxEngine/engine/assets/fonts/comic.ttf";
 constexpr const char* ROBOTO_REG_PATH = "fonts/Roboto-Regular.ttf";
 constexpr const char* FA_REG_PATH =     "fonts/FA-Regular-400.otf";
 constexpr const char* FA_SOLID_PATH =   "fonts/FA-Solid-900.otf";
+
+constexpr const char* ICON_PATH = "assets/textures/icons/icon.png";
 
 
 struct WindowConfig {
@@ -41,6 +43,8 @@ struct WindowConfig {
     const char* title = "SPXEngine";
     bool resizable = true;
     bool vsync = true;
+
+
 };
 
 class SpxWindow {
@@ -54,9 +58,17 @@ public:
     SpxWindow(const SpxWindow&) = delete;
     SpxWindow& operator=(const SpxWindow&) = delete;
 
+	void SetIcon(GLFWwindow* window); // set window icon from image file
+
 	// #### ImGui integration requires access to the GLFWwindow* ####
     void SetUpImGui(GLFWwindow* window);
     void NewImguiFrame(GLFWwindow* window);
+
+    // Docking control (new)
+    void SetEnableDocking(bool enabled);
+    bool GetEnableDocking() const;
+
+    void MainDockSpace(bool* p_open); // docking space
 	void RenderImGui(GLFWwindow* window);
 	void ImGuiShutdown();
 
@@ -83,4 +95,6 @@ private:
 
     // Simple refcount so multiple SpxWindow instances don't re-init/terminate GLFW
     static int s_glfwRefCount;
+
+    bool enableDocking_ = false;
 };

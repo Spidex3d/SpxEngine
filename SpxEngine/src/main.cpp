@@ -11,6 +11,7 @@ int main() {
     cfg.windowConfig.title = "SPXEngine - Sandbox";
     cfg.windowConfig.vsync = true;
 	cfg.enableImGui = true; // Enable ImGui for GUI rendering
+	//cfg.enableDocking = false; // Enable docking feature in ImGui
     
 	// Initialize engine with config 
     if (!engine.Initialize(cfg)) {

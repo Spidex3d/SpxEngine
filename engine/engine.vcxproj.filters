@@ -51,6 +51,9 @@
     <ClCompile Include="src\imgui_impl_glfw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\asset_path.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h">
@@ -98,8 +101,25 @@
     <ClInclude Include="vendors\imgui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vendors\stb\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vendors\stb\stb_image2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\asset_path.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\engine.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\fonts\comic.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\textures\icons\Icon.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
