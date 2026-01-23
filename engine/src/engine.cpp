@@ -12,7 +12,7 @@ Engine::Engine() = default;
 Engine::~Engine() { Shutdown(); }
 
 bool Engine::Initialize(const EngineConfig& config) {
-    config_ = config;
+    m_config = config;
 
     window = std::make_unique<SpxWindow>(config.windowConfig);
     if (!window || !window->IsValid()) {
@@ -34,8 +34,8 @@ bool Engine::Initialize(const EngineConfig& config) {
         return false;
     }
 	// Create Input helper now that we have a native window for keyboard/mouse input
-    input_ = std::make_unique<Input>(glfwwindow);
-    if (input_->HasKeyboardAttached()) {
+    m_input = std::make_unique<Input>(glfwwindow);
+    if (m_input->HasKeyboardAttached()) {
         LOG_INFO("Keyboard input initialized");
     }
     else {
@@ -65,8 +65,8 @@ bool Engine::Initialize(const EngineConfig& config) {
         glViewport(0, 0, width, height);
     });
 
-    running_ = true;
-    lastTime_ = std::chrono::steady_clock::now();
+    m_running = true;
+    m_lastTime = std::chrono::steady_clock::now();
     LOG_INFO("Engine initialized successfully");
     return true;
 
@@ -82,27 +82,26 @@ void Engine::Run() {
     using clock = std::chrono::steady_clock;
     bool showGui = true; // persistent for the run session
 
-    while (running_ && window && !window->ShouldClose()) {
+    while (m_running && window && !window->ShouldClose()) {
         auto now = clock::now();
-        std::chrono::duration<float> delta = now - lastTime_;
-        lastTime_ = now;
+        std::chrono::duration<float> delta = now - m_lastTime;
+        m_lastTime = now;
         float dt = delta.count();
 
         // 1) Poll events / update input first
-        if (input_) {
-            input_->Update();   // calls glfwPollEvents()
-            if (input_->IsKeyPressed(GLFW_KEY_ESCAPE)) {
+        if (m_input) {
+            m_input->Update();   // calls glfwPollEvents()
+            if (m_input->IsKeyPressed(GLFW_KEY_ESCAPE)) {
                 if (glfwwindow) glfwSetWindowShouldClose(glfwwindow, true);
             }
         }
         else {
             window->PollEvents();
         }
-
- 
+        
 
         // 2) Start ImGui frame (only if enabled)
-        if (config_.enableImGui) {
+        if (m_config.enableImGui) {
             window->NewImguiFrame(glfwwindow);
 
             // 3) Build GUI (only add windows when shown)
@@ -138,7 +137,7 @@ void Engine::Run() {
         Tick(dt);
 
         // 5) Finish ImGui frame and render draw data (always do this if ImGui was started)
-        if (config_.enableImGui) {
+        if (m_config.enableImGui) {
             window->RenderImGui(glfwwindow); // this calls ImGui::Render() internally
         }
 
@@ -146,7 +145,7 @@ void Engine::Run() {
         window->SwapBuffers();
     }
 
-    running_ = false;
+    m_running = false;
 
 }
 
@@ -155,24 +154,24 @@ void Engine::Tick(float dt) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Engine::RequestExit() { running_ = false; }
-bool Engine::IsRunning() const { return running_; }
+void Engine::RequestExit() { m_running = false; }
+bool Engine::IsRunning() const { return m_running; }
 SpxWindow* Engine::GetWindow() { return window.get(); }
 
 void Engine::Shutdown() {
 
     // Shutdown ImGui first (so it doesn't try to use destroyed GL resources)
-    if (config_.enableImGui && window) {
+    if (m_config.enableImGui && window) {
         window->ImGuiShutdown();
 		LOG_INFO("ImGui shutdown successfully");
     }
 
     // clean up in reverse order
-    input_.reset();
+    m_input.reset();
     if (window) {
         window.reset();
     }
    
-    running_ = false;
+    m_running = false;
     LOG_INFO("Engine shutdown");
 }

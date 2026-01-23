@@ -67,8 +67,8 @@ public:
     // Docking control (new)
     void SetEnableDocking(bool enabled);
     bool GetEnableDocking() const;
-
     void MainDockSpace(bool* p_open); // docking space
+
 	void RenderImGui(GLFWwindow* window);
 	void ImGuiShutdown();
 
@@ -87,14 +87,16 @@ public:
     void* GetNativeWindow() const;
 
 private:
+    // All varibles with  leading m_ for member variables that I have looked at and understand what they do
+
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 
     GLFWwindow* window = nullptr;
-    WindowConfig config_;
-    ResizeCallback resizeCallback_ = nullptr;
+    WindowConfig m_config;
+    ResizeCallback m_resizeCallback = nullptr;
 
     // Simple refcount so multiple SpxWindow instances don't re-init/terminate GLFW
-    static int s_glfwRefCount;
+	static int s_glfwRefCount; // static member declaration
 
-    bool enableDocking_ = false;
+    bool m_enableDocking = false;
 };

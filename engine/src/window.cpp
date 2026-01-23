@@ -18,12 +18,12 @@ void SpxWindow::FramebufferSizeCallback(GLFWwindow* window, int width, int heigh
     SpxWindow* self = reinterpret_cast<SpxWindow*>(up);
     if (self) {
         // update stored sizes (we don't expose setters here, but we can rely on GLFW queries)
-        if (self->resizeCallback_) self->resizeCallback_(width, height);
+        if (self->m_resizeCallback) self->m_resizeCallback(width, height);
     }
 }
 
 SpxWindow::SpxWindow(const WindowConfig& config)
-    : config_(config)
+    : m_config(config)
 {
     if (s_glfwRefCount == 0) {
         if (!glfwInit()) {
@@ -38,9 +38,9 @@ SpxWindow::SpxWindow(const WindowConfig& config)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, config_.resizable ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, m_config.resizable ? GLFW_TRUE : GLFW_FALSE);
 
-    window = glfwCreateWindow(config_.width, config_.height, config_.title, nullptr, nullptr);
+    window = glfwCreateWindow(m_config.width, m_config.height, m_config.title, nullptr, nullptr);
     if (!window) {
         //std::cerr << "SpxWindow: Failed to create GLFW window\n";
 		LOG_DEBUG("SpxWindow: Failed to create GLFW window");
@@ -58,7 +58,7 @@ SpxWindow::SpxWindow(const WindowConfig& config)
     glfwMakeContextCurrent(window);
 
     // Set vsync as requested
-    SetVSync(config_.vsync);
+    SetVSync(m_config.vsync);
 }
 
 void SpxWindow::SetIcon(GLFWwindow* window)
@@ -113,18 +113,18 @@ void SpxWindow::NewImguiFrame(GLFWwindow* window)
 
 void SpxWindow::SetEnableDocking(bool enabled)
 {
-    enableDocking_ = enabled;
+    m_enableDocking = enabled;
 }
 
 bool SpxWindow::GetEnableDocking() const
 {
-    return enableDocking_;
+    return m_enableDocking;
 }
 
 void SpxWindow::MainDockSpace(bool* p_open)  
 {
    
-    if (enableDocking_) { // Docking on or off
+    if (m_enableDocking) { // Docking on or off
         static bool opt_fullscreen = true;
         static bool opt_padding = false;
         static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;// I changed this so my scean shows up on start up
@@ -240,153 +240,16 @@ void SpxWindow::SetVSync(bool enabled) {
     if (!window) return;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(enabled ? 1 : 0);
-    config_.vsync = enabled;
+    m_config.vsync = enabled;
 }
 
 void SpxWindow::SetResizeCallback(ResizeCallback cb) {
-    resizeCallback_ = cb;
+    m_resizeCallback = cb;
 }
 
 void* SpxWindow::GetNativeWindow() const {
     return reinterpret_cast<void*>(window);
 }
-
-
-
-
-//#include "window.h"
-//#include <GLFW/glfw3.h>
-//#include <iostream>
-//#include <cassert>
-//#include "log.h"
-//
-//struct SpxWindow::Impl {
-//    GLFWwindow* window = nullptr;
-//    int width = 1280;
-//    int height = 720;
-//    WindowConfig config;
-//    SpxWindow::ResizeCallback resizeCallback = nullptr;
-//    static int s_glfwRefCount;
-//};
-//
-//int SpxWindow::Impl::s_glfwRefCount = 0;
-//
-//static void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
-//    void* up = glfwGetWindowUserPointer(window);
-//    if (!up) return;
-//    SpxWindow::Impl* impl = reinterpret_cast<SpxWindow::Impl*>(up);
-//    impl->width = width;
-//    impl->height = height;
-//    // update GL viewport here (host or engine will call glViewport when appropriate)
-//    if (impl->resizeCallback) impl->resizeCallback(width, height);
-//}
-//
-//SpxWindow::SpxWindow(const WindowConfig& config)
-//    : impl_(new Impl())
-//{
-//    impl_->config = config;
-//    impl_->width = config.width;
-//    impl_->height = config.height;
-//
-//    if (Impl::s_glfwRefCount == 0) {
-//        if (!glfwInit()) {
-//            //std::cerr << "Failed to initialize GLFW\n";
-//			LOG_DEBUG("Failed to initialize GLFW");
-//            delete impl_;
-//            impl_ = nullptr;
-//            return;
-//        }
-//    }
-//    ++Impl::s_glfwRefCount;
-//
-//    // Window hints (use OpenGL 3.3 core as default)
-//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-//    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-//#ifdef _WIN32
-//    // On Windows, set this to ensure compatibility with old compilers
-//    // (no action needed normally)
-//#endif
-//    glfwWindowHint(GLFW_RESIZABLE, config.resizable ? GLFW_TRUE : GLFW_FALSE);
-//
-//    impl_->window = glfwCreateWindow(config.width, config.height, config.title, nullptr, nullptr);
-//    if (!impl_->window) {
-//        //std::cerr << "Failed to create GLFW window\n";
-//		LOG_DEBUG("Failed to create GLFW window");
-//        // decrement refcount and maybe terminate
-//        --Impl::s_glfwRefCount;
-//        if (Impl::s_glfwRefCount == 0) {
-//            glfwTerminate();
-//        }
-//        delete impl_;
-//        impl_ = nullptr;
-//        return;
-//    }
-//
-//    // Store pointer so callbacks can access Impl
-//    glfwSetWindowUserPointer(impl_->window, impl_);
-//    glfwSetFramebufferSizeCallback(impl_->window, FramebufferSizeCallback);
-//
-//    // Make context current here if you want to init GL immediately from here,
-//    // otherwise the caller (engine) will call gladLoadGLLoader after making context current.
-//    glfwMakeContextCurrent(impl_->window);
-//    SetVSync(config.vsync);
-//}
-//
-//SpxWindow::~SpxWindow() {
-//    if (impl_) {
-//        if (impl_->window) {
-//            glfwDestroyWindow(impl_->window);
-//            impl_->window = nullptr;
-//        }
-//        --Impl::s_glfwRefCount;
-//        if (Impl::s_glfwRefCount == 0) {
-//            glfwTerminate();
-//        }
-//        delete impl_;
-//        impl_ = nullptr;
-//    }
-//}
-//
-//bool SpxWindow::IsValid() const {
-//    return impl_ && impl_->window;
-//}
-//
-//bool SpxWindow::ShouldClose() const {
-//    return !IsValid() || glfwWindowShouldClose(impl_->window);
-//}
-//
-//void SpxWindow::PollEvents() {
-//    glfwPollEvents();
-//}
-//
-//void SpxWindow::SwapBuffers() {
-//    if (IsValid())
-//        glfwSwapBuffers(impl_->window);
-//}
-//
-//int SpxWindow::GetWidth() const {
-//    return impl_ ? impl_->width : 0;
-//}
-//
-//int SpxWindow::GetHeight() const {
-//    return impl_ ? impl_->height : 0;
-//}
-//
-//void SpxWindow::SetVSync(bool enabled) {
-//    if (!IsValid()) return;
-//    glfwMakeContextCurrent(impl_->window);
-//    glfwSwapInterval(enabled ? 1 : 0);
-//    impl_->config.vsync = enabled;
-//}
-//
-//void SpxWindow::SetResizeCallback(ResizeCallback cb) {
-//    if (impl_) impl_->resizeCallback = cb;
-//}
-//
-//void* SpxWindow::GetNativeWindow() const {
-//    return impl_ ? reinterpret_cast<void*>(impl_->window) : nullptr;
-//}
 
 
 

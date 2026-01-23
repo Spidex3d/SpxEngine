@@ -240,12 +240,12 @@ CODE
  - About imconfig.h:
    - You may modify your copy of imconfig.h, in this case don't overwrite it.
    - or you may locally branch to modify imconfig.h and merge/rebase latest.
-   - or you may '#define IMGUI_USER_CONFIG "my_config_file.h"' globally from your build system to
+   - or you may '#define IMGUI_USER_CONFIG "my_m_configfile.h"' globally from your build system to
      specify a custom path for your imconfig.h file and instead not have to modify the default one.
 
  - Overwrite all the sources files except for imconfig.h (if you have modified your copy of imconfig.h)
  - Or maintain your own branch where you have imconfig.h modified as a top-most commit which you can regularly rebase over "master".
- - You can also use '#define IMGUI_USER_CONFIG "my_config_file.h" to redirect configuration to your own file.
+ - You can also use '#define IMGUI_USER_CONFIG "my_m_configfile.h" to redirect configuration to your own file.
  - Read the "API BREAKING CHANGES" section (below). This is where we list occasional API breaking changes.
    If a function/type has been renamed / or marked obsolete, try to fix the name in your code before it is permanently removed
    from the public API. If you have a problem with a missing function/symbols, search for its name in the code, there will
@@ -4956,11 +4956,11 @@ void ImGui::NewFrame()
         g.ActiveIdUsingNavInputMask = 0;
     else if (g.ActiveIdUsingNavInputMask != 0)
     {
-        // If your custom widget code used:                 { g.ActiveIdUsingNavInputMask |= (1 << ImGuiNavInput_Cancel); }
+        // If your custom widget code used:                 { g.ActiveIdUsingNavInputMask |= (1 << ImGuiNavinput_Cancel); }
         // Since IMGUI_VERSION_NUM >= 18804 it should be:   { SetKeyOwner(ImGuiKey_Escape, g.ActiveId); SetKeyOwner(ImGuiKey_NavGamepadCancel, g.ActiveId); }
-        if (g.ActiveIdUsingNavInputMask & (1 << ImGuiNavInput_Cancel))
+        if (g.ActiveIdUsingNavInputMask & (1 << ImGuiNavinput_Cancel))
             SetKeyOwner(ImGuiKey_Escape, g.ActiveId);
-        if (g.ActiveIdUsingNavInputMask & ~(1 << ImGuiNavInput_Cancel))
+        if (g.ActiveIdUsingNavInputMask & ~(1 << ImGuiNavinput_Cancel))
             IM_ASSERT(0); // Other values unsupported
     }
 #endif
@@ -9831,27 +9831,27 @@ static void ImGui::UpdateKeyboardInputs()
     }
 #endif
 
-    // Import legacy ImGuiNavInput_ io inputs and convert to gamepad keys
+    // Import legacy ImGuiNavinput_ io inputs and convert to gamepad keys
 #ifndef IMGUI_DISABLE_OBSOLETE_KEYIO
     const bool nav_gamepad_active = (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0 && (io.BackendFlags & ImGuiBackendFlags_HasGamepad) != 0;
     if (io.BackendUsingLegacyNavInputArray && nav_gamepad_active)
     {
-        #define MAP_LEGACY_NAV_INPUT_TO_KEY1(_KEY, _NAV1)           do { io.KeysData[_KEY].Down = (io.NavInputs[_NAV1] > 0.0f); io.KeysData[_KEY].AnalogValue = io.NavInputs[_NAV1]; } while (0)
-        #define MAP_LEGACY_NAV_INPUT_TO_KEY2(_KEY, _NAV1, _NAV2)    do { io.KeysData[_KEY].Down = (io.NavInputs[_NAV1] > 0.0f) || (io.NavInputs[_NAV2] > 0.0f); io.KeysData[_KEY].AnalogValue = ImMax(io.NavInputs[_NAV1], io.NavInputs[_NAV2]); } while (0)
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadFaceDown, ImGuiNavInput_Activate);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadFaceRight, ImGuiNavInput_Cancel);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadFaceLeft, ImGuiNavInput_Menu);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadFaceUp, ImGuiNavInput_Input);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadDpadLeft, ImGuiNavInput_DpadLeft);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadDpadRight, ImGuiNavInput_DpadRight);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadDpadUp, ImGuiNavInput_DpadUp);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadDpadDown, ImGuiNavInput_DpadDown);
-        MAP_LEGACY_NAV_INPUT_TO_KEY2(ImGuiKey_GamepadL1, ImGuiNavInput_FocusPrev, ImGuiNavInput_TweakSlow);
-        MAP_LEGACY_NAV_INPUT_TO_KEY2(ImGuiKey_GamepadR1, ImGuiNavInput_FocusNext, ImGuiNavInput_TweakFast);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadLStickLeft, ImGuiNavInput_LStickLeft);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadLStickRight, ImGuiNavInput_LStickRight);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadLStickUp, ImGuiNavInput_LStickUp);
-        MAP_LEGACY_NAV_INPUT_TO_KEY1(ImGuiKey_GamepadLStickDown, ImGuiNavInput_LStickDown);
+        #define MAP_LEGACY_NAV_input_TO_KEY1(_KEY, _NAV1)           do { io.KeysData[_KEY].Down = (io.NavInputs[_NAV1] > 0.0f); io.KeysData[_KEY].AnalogValue = io.NavInputs[_NAV1]; } while (0)
+        #define MAP_LEGACY_NAV_input_TO_KEY2(_KEY, _NAV1, _NAV2)    do { io.KeysData[_KEY].Down = (io.NavInputs[_NAV1] > 0.0f) || (io.NavInputs[_NAV2] > 0.0f); io.KeysData[_KEY].AnalogValue = ImMax(io.NavInputs[_NAV1], io.NavInputs[_NAV2]); } while (0)
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadFaceDown, ImGuiNavinput_Activate);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadFaceRight, ImGuiNavinput_Cancel);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadFaceLeft, ImGuiNavinput_Menu);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadFaceUp, ImGuiNavinput_Input);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadDpadLeft, ImGuiNavinput_DpadLeft);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadDpadRight, ImGuiNavinput_DpadRight);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadDpadUp, ImGuiNavinput_DpadUp);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadDpadDown, ImGuiNavinput_DpadDown);
+        MAP_LEGACY_NAV_input_TO_KEY2(ImGuiKey_GamepadL1, ImGuiNavinput_FocusPrev, ImGuiNavinput_TweakSlow);
+        MAP_LEGACY_NAV_input_TO_KEY2(ImGuiKey_GamepadR1, ImGuiNavinput_FocusNext, ImGuiNavinput_TweakFast);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadLStickLeft, ImGuiNavinput_LStickLeft);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadLStickRight, ImGuiNavinput_LStickRight);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadLStickUp, ImGuiNavinput_LStickUp);
+        MAP_LEGACY_NAV_input_TO_KEY1(ImGuiKey_GamepadLStickDown, ImGuiNavinput_LStickDown);
         #undef NAV_MAP_KEY
     }
 #endif
@@ -21280,11 +21280,11 @@ void ImGui::DebugNodeFont(ImFont* font)
     Text("Ellipsis character: '%s' (U+%04X)", ImTextCharToUtf8(c_str, font->EllipsisChar), font->EllipsisChar);
     const int surface_sqrt = (int)ImSqrt((float)font->MetricsTotalSurface);
     Text("Texture Area: about %d px ~%dx%d px", font->MetricsTotalSurface, surface_sqrt, surface_sqrt);
-    for (int config_i = 0; config_i < font->ConfigDataCount; config_i++)
+    for (int m_configi = 0; m_configi < font->ConfigDataCount; m_configi++)
         if (font->ConfigData)
-            if (const ImFontConfig* cfg = &font->ConfigData[config_i])
+            if (const ImFontConfig* cfg = &font->ConfigData[m_configi])
                 BulletText("Input %d: \'%s\', Oversample: (%d,%d), PixelSnapH: %d, Offset: (%.1f,%.1f)",
-                    config_i, cfg->Name, cfg->OversampleH, cfg->OversampleV, cfg->PixelSnapH, cfg->GlyphOffset.x, cfg->GlyphOffset.y);
+                    m_configi, cfg->Name, cfg->OversampleH, cfg->OversampleV, cfg->PixelSnapH, cfg->GlyphOffset.x, cfg->GlyphOffset.y);
 
     // Display all glyphs of the fonts in separate pages of 256 characters
     if (TreeNode("Glyphs", "Glyphs (%d)", font->Glyphs.Size))

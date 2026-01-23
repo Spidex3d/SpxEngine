@@ -1592,9 +1592,9 @@ enum ImGuiInputFlags_
 // Custom backends: feed gamepad inputs via io.AddKeyEvent() and ImGuiKey_GamepadXXX enums.
 enum ImGuiNavInput
 {
-    ImGuiNavInput_Activate, ImGuiNavInput_Cancel, ImGuiNavInput_Input, ImGuiNavInput_Menu, ImGuiNavInput_DpadLeft, ImGuiNavInput_DpadRight, ImGuiNavInput_DpadUp, ImGuiNavInput_DpadDown,
-    ImGuiNavInput_LStickLeft, ImGuiNavInput_LStickRight, ImGuiNavInput_LStickUp, ImGuiNavInput_LStickDown, ImGuiNavInput_FocusPrev, ImGuiNavInput_FocusNext, ImGuiNavInput_TweakSlow, ImGuiNavInput_TweakFast,
-    ImGuiNavInput_COUNT,
+    ImGuiNavinput_Activate, ImGuiNavinput_Cancel, ImGuiNavinput_Input, ImGuiNavinput_Menu, ImGuiNavinput_DpadLeft, ImGuiNavinput_DpadRight, ImGuiNavinput_DpadUp, ImGuiNavinput_DpadDown,
+    ImGuiNavinput_LStickLeft, ImGuiNavinput_LStickRight, ImGuiNavinput_LStickUp, ImGuiNavinput_LStickDown, ImGuiNavinput_FocusPrev, ImGuiNavinput_FocusNext, ImGuiNavinput_TweakSlow, ImGuiNavinput_TweakFast,
+    ImGuiNavinput_COUNT,
 };
 #endif
 
@@ -2448,7 +2448,7 @@ struct ImGuiIO
 #ifndef IMGUI_DISABLE_OBSOLETE_KEYIO
     int         KeyMap[ImGuiKey_COUNT];             // [LEGACY] Input: map of indices into the KeysDown[512] entries array which represent your "native" keyboard state. The first 512 are now unused and should be kept zero. Legacy backend will write into KeyMap[] using ImGuiKey_ indices which are always >512.
     bool        KeysDown[ImGuiKey_COUNT];           // [LEGACY] Input: Keyboard keys that are pressed (ideally left in the "native" order your engine has access to keyboard keys, so you can use your own defines/enums for keys). This used to be [512] sized. It is now ImGuiKey_COUNT to allow legacy io.KeysDown[GetKeyIndex(...)] to work without an overflow.
-    float       NavInputs[ImGuiNavInput_COUNT];     // [LEGACY] Since 1.88, NavInputs[] was removed. Backends from 1.60 to 1.86 won't build. Feed gamepad inputs via io.AddKeyEvent() and ImGuiKey_GamepadXXX enums.
+    float       NavInputs[ImGuiNavinput_COUNT];     // [LEGACY] Since 1.88, NavInputs[] was removed. Backends from 1.60 to 1.86 won't build. Feed gamepad inputs via io.AddKeyEvent() and ImGuiKey_GamepadXXX enums.
     //void*     ImeWindowHandle;                    // [Obsoleted in 1.87] Set ImGuiViewport::PlatformHandleRaw instead. Set this to your HWND to get automatic IME cursor positioning.
 #endif
 

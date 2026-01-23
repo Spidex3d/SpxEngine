@@ -29,12 +29,13 @@ public:
     void Shutdown();
 
 private:
-    // moved here instead of Impl
-    EngineConfig config_;
+	// All varibles with  leading m_ for member variables that I have looked at and understand what they do
+    EngineConfig m_config;
     std::unique_ptr<SpxWindow> window;
     GLFWwindow* glfwwindow = nullptr;
-    std::unique_ptr<Input> input_;
-    bool running_ = false;
-    std::chrono::steady_clock::time_point lastTime_;
+    std::unique_ptr<Input> m_input;
+
+	bool m_running = false; // main loop flag
+    std::chrono::steady_clock::time_point m_lastTime;
     // add other managers/systems as direct members here
 };
