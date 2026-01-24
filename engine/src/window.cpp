@@ -3,6 +3,8 @@
 #include "imgui\imgui.h"
 #include <imgui\imgui_impl_glfw.h>
 #include <imgui\imgui_impl_opengl3.h>
+#include <imgui\ImGuiAF.h>
+
 #include "stb/stb_image.h"
 #include "../include/asset_path.h" // for GetAssetPath
 #include "../include/globalVar.h"
@@ -101,9 +103,14 @@ void SpxWindow::SetUpImGui(GLFWwindow* window) {
     fontconfig.PixelSnapH = true;
     static const ImWchar ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
+    
+
     fontconfig.GlyphOffset = ImVec2(0.0f, 1.0f);
     std::string fontPath = GetAssetPath(FONT_PATH_MAIN_REL);
     io.Fonts->AddFontFromFileTTF(fontPath.c_str(), FONT_SIZE);
+
+	std::string AFfontPath  = GetAssetPath(FA_SOLID_PATH).c_str();
+    io.Fonts->AddFontFromFileTTF(AFfontPath.c_str(), FONT_SIZE, &fontconfig, ranges);
 }
 
 void SpxWindow::NewImguiFrame(GLFWwindow* window)
@@ -208,7 +215,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         if (m_renderCallback) {
             m_renderCallback();
         }
-
+        
         // Done rendering to FBO
         Unbinde_Frambuffer();
 
@@ -229,11 +236,27 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         ImGui::OpenPopup("RightClickMenu");
     }
 
+    
     if (ImGui::BeginPopup("RightClickMenu"))
     {
+        
         if (ImGui::BeginMenu("Add a new mesh")) {
+            if (ImGui::MenuItem("Cube")) {
+
+                // Request engine to add a plane via action callback
+               // if (m_actionCallback) m_actionCallback("AddPlane");
+
+
+                
+            }
+
             if (ImGui::MenuItem("Plane")) {
-                ShouldAddPlane = true;
+                
+                // Request engine to add a plane via action callback
+                if (m_actionCallback) m_actionCallback("AddPlane");
+
+                
+                
             }
             // other menu items...
             ImGui::EndMenu();
@@ -332,8 +355,18 @@ void SpxWindow::Rescale_frambuffer(float width, float height)
     LOG_INFO("Created FBO %u (color=%u depth=%u) size=%dx%d", (unsigned)m_fbo, (unsigned)m_fboColor, (unsigned)m_fboDepth, w, h);
 }
 
+void SpxWindow::MainObjectExplorerWindow(GLFWwindow* window)
+{
+    
+}
+
 void SpxWindow::SetRenderCallback(RenderCallback cb) {
     m_renderCallback = std::move(cb);
+}
+// Action callback management (UI -> engine commands) like add plane, etc.
+void SpxWindow::SetActionCallback(ActionCallback cb)
+{
+    m_actionCallback = std::move(cb);
 }
 int SpxWindow::GetFramebufferWidth() const { return m_fbWidth; }
 int SpxWindow::GetFramebufferHeight() const { return m_fbHeight; }
@@ -420,6 +453,8 @@ void SpxWindow::SetVSync(bool enabled) {
 void SpxWindow::SetResizeCallback(ResizeCallback cb) {
     m_resizeCallback = cb;
 }
+
+
 
 void* SpxWindow::GetNativeWindow() const {
     return reinterpret_cast<void*>(window);

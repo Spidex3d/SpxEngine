@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <string>
 #include <imgui\ImGuiAF.h>
 #include <imgui\imgui.h>
 #include <imgui\imgui_internal.h>
@@ -27,6 +28,8 @@ class SpxWindow {
 public:
     using ResizeCallback = std::function<void(int width, int height)>;
     using RenderCallback = std::function<void()>; // called while FBO is bound so Engine can render into it
+    using ActionCallback = std::function<void(const std::string&)>; // called when UI requests an action
+
 
     explicit SpxWindow(const WindowConfig& config);
     ~SpxWindow();
@@ -53,6 +56,8 @@ public:
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
     void Rescale_frambuffer(float width, float height); // recreate at given pixel size
 
+	void MainObjectExplorerWindow(GLFWwindow* window); // object explorer window with right-click menu
+
     // Render callback management
     void SetRenderCallback(RenderCallback cb);
     // Framebuffer info accessors (pixel size and color texture id)
@@ -73,6 +78,8 @@ public:
 
     void SetVSync(bool enabled);
     void SetResizeCallback(ResizeCallback cb);
+    // Action callback management (UI -> engine commands)
+    void SetActionCallback(ActionCallback cb);
 
     // Return opaque native window pointer (GLFWwindow*)
     void* GetNativeWindow() const;
@@ -95,7 +102,8 @@ private:
 
     // Render callback called while FBO is bound
     RenderCallback m_renderCallback = nullptr;
-
+    // Action callback called when UI triggers actions (AddPlane, etc.)
+    ActionCallback m_actionCallback = nullptr;
     // Simple refcount so multiple SpxWindow instances don't re-init/terminate GLFW
     static int s_glfwRefCount; // static member declaration
 
@@ -119,8 +127,10 @@ const float TINY_FONT_SIZE = 10.0f;
 constexpr const char* FONT_PATH_MAIN_REL = "assets/fonts/comic.ttf";
 
 //constexpr const char* FONT_PATH_MAIN =  "C:/Users/marty/Desktop/SPXEngine/SPXEngine/SpxEngine/engine/assets/fonts/comic.ttf";
-constexpr const char* ROBOTO_REG_PATH = "fonts/Roboto-Regular.ttf";
-constexpr const char* FA_REG_PATH = "fonts/FA-Regular-400.otf";
-constexpr const char* FA_SOLID_PATH = "fonts/FA-Solid-900.otf";
+constexpr const char* FONT_PATH_MAIN = "assets/fonts/comic.ttf";
+
+constexpr const char* ROBOTO_REG_PATH = "assets/fonts/Roboto-Regular.ttf";
+constexpr const char* FA_REG_PATH = "assets/fonts/FA-Regular-400.otf";
+constexpr const char* FA_SOLID_PATH = "assets/fonts/FA-Solid-900.otf";
 
 constexpr const char* ICON_PATH = "assets/textures/icons/icon.png";

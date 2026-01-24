@@ -8,8 +8,12 @@
 #include <memory>
 #include "../include/globalVar.h"
 
+// Forward-declare Shader to avoid including its header here
+class Shader;
+
 struct GameObj { // Any game object not player-related 
-    virtual ~GameObj() = default;   // <<-- add this
+    virtual ~GameObj() = default; // make polymorphic for safe dynamic_cast
+
     GameObj()
         : entId(-1),
         entTypeID(-1),
@@ -55,11 +59,17 @@ public:
     Entity();
     ~Entity();
 
-    void RenderPlane(const glm::mat4& view, const glm::mat4& projection,
+    // Create a new plane and append to entVector (returns index of new plane via PlaneObjIdx)
+    void CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& PlaneObjIdx, const glm::vec3& position = glm::vec3(0.0f));
+
+
+    void RenderPlane(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& PlaneObjIdx);
 
 private:
 };
+// ################################################ Class Entity Ends #####################################################
 
 class PlaneModel : public GameObj {
 
@@ -129,7 +139,3 @@ public:
 private:
 
 };
-
-
-
-

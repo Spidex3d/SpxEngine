@@ -1,12 +1,12 @@
-// engine.h
 #pragma once
 #include "window.h"
 #include "input.h"
 #include <memory>
 #include <chrono>
 #include <vector>
+
 // Forward-declare to avoid pulling shader header into every consumer
-//class Shader;
+class Shader;
 
 #include "entity.h" // Engine will own the Entity and the entity vector
 
@@ -16,6 +16,7 @@ struct EngineConfig {
     bool enableDocking = true;
     float clearColor[4] = { 0.12f, 0.15f, 0.18f, 1.0f };
 };
+const ImVec4 COLOR_LIGHTBLUE(0.43f, 0.7f, 0.89f, 1.0f);
 
 class Engine {
 public:
@@ -33,6 +34,13 @@ public:
     SpxWindow* GetWindow();
     void Shutdown();
 
+	int GetSelectedEntityIndex() const { return m_selectedEntityIndex; }  // use for selecting entity in UI
+	void SetSelectedEntityIndex(int idx) { m_selectedEntityIndex = idx; } // set from UI
+
+    // Add a plane to the scene at the given position (default center)
+    void AddPlane(const glm::vec3& pos = glm::vec3(0.0f));
+
+
 private:
     // All varibles with  leading m_ for member variables that I have looked at and understand what they do
     EngineConfig m_config;
@@ -46,9 +54,17 @@ private:
     int m_currentEntityIndex = 0;
     int m_planeObjIdx = 0;
 
+    int m_selectedEntityIndex = -1; // -1 = none selected
+
+    // Engine-owned shader for plane rendering
+    std::unique_ptr<Shader> m_planeShader;
+
     bool m_running = false; // main loop flag
     std::chrono::steady_clock::time_point m_lastTime;
     // add other managers/systems as direct members here
 };
+
+
+
 
 
