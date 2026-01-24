@@ -103,27 +103,29 @@ void Engine::Run() {
         // 2) Start ImGui frame (only if enabled)
         if (m_config.enableImGui) {
             window->NewImguiFrame(glfwwindow);
+            window->MainDockSpace(nullptr);
 
             // 3) Build GUI (only add windows when shown)
+			// ############################## Add all editor GUI here ##############################
+			window->MainSceneWindow(glfwwindow); // Main ImGui scene window
+
+
+
+
             if (showGui) {
                 ImGui::Begin("Editor");
 
-                //bool dockingEnabled = window->GetEnableDocking();
-                //if (ImGui::Checkbox("Enable Docking", &dockingEnabled)) {
-                //    // user changed the checkbox -> update window and ImGui IO
-                //    window->SetEnableDocking(dockingEnabled);
-
-                //    ImGuiIO& io = ImGui::GetIO();
-                //    if (dockingEnabled) {
-                //        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-                //    }
-                //    else {
-                //        io.ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
-                //    }
-                //    // If you also want to toggle viewports together:
-                //    // if (dockingEnabled) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-                //    // else io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
-                //}
+                bool dockingEnabled = window->GetEnableDocking();
+                if (ImGui::Checkbox("Turn Docking off", &dockingEnabled)) {
+                    window->SetEnableDocking(dockingEnabled);
+                    ImGuiIO& io = ImGui::GetIO();
+                    if (dockingEnabled) {
+                        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+                    }
+                    else {
+                        io.ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
+                    }
+                }
 
                 if (ImGui::Button(showGui ? "Play (stop GUI)" : "Stop (show GUI)")) {
                     showGui = !showGui;
@@ -132,7 +134,8 @@ void Engine::Run() {
                 ImGui::End();
             }
         }
-
+		// ############ No more editor GUI building beyond this point #############
+        
         // 4) Update / render your scene AFTER building UI so UI overlays on top
         Tick(dt);
 
