@@ -6,6 +6,7 @@
 //#include "texture_manager.h"
 #include "../include/textures.h"
 #include <memory>
+#include <filesystem>
 
 // Module-scope cached shader so we don't recompile every frame.
 // This keeps the change local to this module. If you later want to own the shader in Engine,
@@ -20,8 +21,14 @@ static void EnsurePlaneShader() {
     std::string shaderVfull = shaderPath + shaderVfile;
     std::string shaderFfull = shaderPath + shaderFfile;
 
+    if (!std::filesystem::exists(shaderVfull) || !std::filesystem::exists(shaderFfull)) {
+        LOG_WARNING("Shader file missing:" << shaderVfull.c_str() << shaderFfull.c_str());
+        return;
+    }
+
     if (!s_planeShader) {
         s_planeShader = std::make_unique<Shader>(shaderVfull, shaderFfull);
+        LOG_INFO("Loading plane shaderss_entity : " << shaderVfull.c_str() << shaderFfull.c_str());
     }
 }
 
@@ -43,10 +50,10 @@ void Entity::RenderPlane(const glm::mat4& view, const glm::mat4& projection,
             newPlane->position = glm::vec3(0.0f, 0.0f, 0.0f);
             break;
         case 1:
-            newPlane->position = glm::vec3(1.5f, 0.0f, 0.0f);
+            newPlane->position = glm::vec3(1.0f, 0.0f, 0.0f);
             break;
         case 2:
-            newPlane->position = glm::vec3(2.0f, 0.0f, 0.0f);
+            newPlane->position = glm::vec3(-1.0f, -0.5f, 0.0f);
             break;
         default:
             newPlane->position = glm::vec3(2.0f, 2.0f, 0.0f);
@@ -59,21 +66,15 @@ void Entity::RenderPlane(const glm::mat4& view, const glm::mat4& projection,
         newPlane->modelMatrix = glm::translate(glm::mat4(1.0f), newPlane->position);
         newPlane->modelMatrix = glm::scale(newPlane->modelMatrix, newPlane->scale);
 
+
         // Load texture via TextureManager (cached) so it persists
-        //Texture tex(texPath + texFile);
-        //        if (!tex.IsLoaded()) {
-        //            LOG_WARNING("Failed to load texture: textures/github.jpg");
-        //            // optional: fall back or continue without texture
-        //        }
-
-
         std::string texPath = GetAssetPath(TEXTURE_PATH);
         std::string texFile = "github.jpg";
         std::string full = texPath + texFile;
         GLuint texID = TextureManager::Load(full);
         if (texID == 0) {
-            LOG_WARNING("Failed to load texture: %s", full.c_str());
-            // fallback: leave tex_ID = 0 and shader should handle it
+            LOG_WARNING("Failed to load texture: " << full.c_str());
+            
         }
         newPlane->tex_ID = texID;
 

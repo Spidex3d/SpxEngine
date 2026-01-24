@@ -11,8 +11,9 @@
 #include <GLFW/glfw3.h>
 
 #include <glad/glad.h> // for GLuint & GL calls used by framebuffer helpers
+//#include <functional>
 
-// Make sure glEnable(GL_DEPTH_TEST) is set(you already do in engine) and glEnable(GL_CULL_FACE) if you want backface culling.
+// Make sure glEnable(GL_DEPTH_TEST) is set (you already do in engine) and glEnable(GL_CULL_FACE) if you want backface culling.
 
 struct WindowConfig {
     int width = 1280;
@@ -25,6 +26,7 @@ struct WindowConfig {
 class SpxWindow {
 public:
     using ResizeCallback = std::function<void(int width, int height)>;
+    using RenderCallback = std::function<void()>; // called while FBO is bound so Engine can render into it
 
     explicit SpxWindow(const WindowConfig& config);
     ~SpxWindow();
@@ -51,7 +53,14 @@ public:
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
     void Rescale_frambuffer(float width, float height); // recreate at given pixel size
 
-    void RenderImGui(GLFWwindow* window);
+    // Render callback management
+    void SetRenderCallback(RenderCallback cb);
+    // Framebuffer info accessors (pixel size and color texture id)
+    int GetFramebufferWidth() const;
+    int GetFramebufferHeight() const;
+    GLuint GetFramebufferColorTexture() const; 
+
+	void RenderImGui(GLFWwindow* window); // finish ImGui frame and render
     void ImGuiShutdown();
 
     bool IsValid() const;
@@ -79,18 +88,19 @@ private:
 
     // Framebuffer resources for the main scene view
     GLuint m_fbo = 0;
-    GLuint m_fboColor = 0;
+	GLuint m_fboColor = 0; // color texture
     GLuint m_fboDepth = 0;
     int m_fbWidth = 0;
     int m_fbHeight = 0;
+
+    // Render callback called while FBO is bound
+    RenderCallback m_renderCallback = nullptr;
 
     // Simple refcount so multiple SpxWindow instances don't re-init/terminate GLFW
     static int s_glfwRefCount; // static member declaration
 
     bool m_enableDocking = true;
 };
-
-
 
 enum FontIndex : int {
     REG_FONT_INDEX = 0,
@@ -114,4 +124,3 @@ constexpr const char* FA_REG_PATH = "fonts/FA-Regular-400.otf";
 constexpr const char* FA_SOLID_PATH = "fonts/FA-Solid-900.otf";
 
 constexpr const char* ICON_PATH = "assets/textures/icons/icon.png";
-

@@ -43,7 +43,7 @@ GLuint TextureManager::Load(const std::string& path) {
         s_cache.emplace(path, tex);
     }
 
-    LOG_INFO("TextureManager: Loaded texture %s -> %u" + path);
+    LOG_INFO("TextureManager: Loaded texture " + path);
     return tex;
 }
 
