@@ -79,7 +79,7 @@ void Entity::RenderCube(Shader* shader, const glm::mat4& view, const glm::mat4& 
 
     // Render stored planes using their stored modelMatrix and persistent texture id
     for (const auto& model : entVector) {
-        if (auto* cube = dynamic_cast<PlaneModel*>(model.get())) {
+        if (auto* cube = dynamic_cast<CubeModel*>(model.get())) {
             // Use the pre-calculated model matrix (don't reset it)
             shader->setMat4("model", cube->modelMatrix);
 
@@ -91,7 +91,7 @@ void Entity::RenderCube(Shader* shader, const glm::mat4& view, const glm::mat4& 
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
 
-            cube->DrawPlane();
+            cube->DrawCube();
 
             if (cube->tex_ID) {
                 glBindTexture(GL_TEXTURE_2D, 0);

@@ -1,12 +1,11 @@
 #pragma once
 #include "window.h"
-#include "input.h"
 #include <memory>
 #include <chrono>
 #include <vector>
 
 #include "../src/Camera/Camera.h" // <-- new Camera class
-//#include "../src/Input/EditorInput.h" // Editor input handling
+#include "../src/Input/EditorInput.h" // <-- new Editor input handling
 // Forward-declare to avoid pulling shader header into every consumer
 class Shader;
 
@@ -52,22 +51,22 @@ private:
     EngineConfig m_config;
     std::unique_ptr<SpxWindow> window;
     GLFWwindow* glfwwindow = nullptr;
-    std::unique_ptr<Input> m_input;
-    //std::unique_ptr<EditorInput> m_input;
+    //std::unique_ptr<Input> m_input;
+    std::unique_ptr<EditorInput> m_input;
 
     // Engine-owned entity state
     std::unique_ptr<Entity> m_entity;
     std::vector<std::unique_ptr<GameObj>> m_entities;
     int m_currentEntityIndex = 0;
-	int m_planeObjIdx = 0; // plane object index
-	int m_cubeObjIdx = 0;  // cube object index
+	int m_planeObjIdx; // plane object index
+	int m_cubeObjIdx;  // cube object index
 
     int m_selectedEntityIndex = -1; // -1 = none selected
 
     // Engine-owned shader for plane rendering
     std::unique_ptr<Shader> m_planeShader;
     // Engine-owned camera (new)
-    Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
+    Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 6.0f));
 
 
     bool m_running = false; // main loop flag

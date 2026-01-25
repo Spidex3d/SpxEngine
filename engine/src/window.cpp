@@ -272,9 +272,87 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     // Update scene-window hovered state (used by EditorInput)
     m_sceneWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
-
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+void SpxWindow::MainScreenMenu(GLFWwindow* window)
+{
+    ImGui::BeginMainMenuBar();
+    if (ImGui::BeginMenu("File"))
+    {
+        if (ImGui::MenuItem("New scene"))
+        {
+
+        }
+        if (ImGui::MenuItem("Open scene"))
+        {
+
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem(ICON_FA_SAVE" Save scene"))
+        {
+
+        }
+        if (ImGui::MenuItem("Save As scene"))
+        {
+
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem(ICON_FA_SIGN_OUT_ALT" Exit"))
+        {
+            glfwSetWindowShouldClose(window, true);
+        }
+        ImGui::EndMenu();
+	}
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Cut"))
+            {
+
+            }
+            if (ImGui::MenuItem("Copy"))
+            {
+
+            }
+            if (ImGui::MenuItem("Paste"))
+            {
+
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Wire Frame"))
+            {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
+            if (ImGui::MenuItem("Wire Frame off"))
+            {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Settings"))
+        {
+            if (ImGui::MenuItem(ICON_FA_COGS" Open Settings"))
+            {
+                //show_settings_window = true; // show settings window
+
+            }
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Tools"))
+        {
+            if (ImGui::MenuItem("Open Tool Box"))
+            {
+
+            }
+
+            ImGui::EndMenu();
+        }
+
+    
+	ImGui::EndMainMenuBar();
 }
 
 // Create or recreate the FBO using current window size if needed

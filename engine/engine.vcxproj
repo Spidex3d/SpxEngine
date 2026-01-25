@@ -157,7 +157,6 @@
     <ClCompile Include="src\globalVar.cpp" />
     <ClCompile Include="src\imgui_impl_glfw.cpp" />
     <ClCompile Include="src\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\Input\EditorInput.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\textures.cpp" />
@@ -173,7 +172,6 @@
     <ClInclude Include="include\engine.h" />
     <ClInclude Include="include\entity.h" />
     <ClInclude Include="include\globalVar.h" />
-    <ClInclude Include="include\input.h" />
     <ClInclude Include="include\log.h" />
     <ClInclude Include="include\shader.h" />
     <ClInclude Include="include\textures.h" />

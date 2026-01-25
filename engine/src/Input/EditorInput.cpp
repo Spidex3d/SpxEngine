@@ -5,6 +5,11 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+
 EditorInput::EditorInput(GLFWwindow* window)
     : m_window(window), m_camera(nullptr)
 {
@@ -34,6 +39,32 @@ void EditorInput::SetCamera(Camera* cam) {
     m_camera = cam;
 }
 
+bool EditorInput::HasKeyboardAttached() const
+{
+#ifdef _WIN32
+    // Query raw input device list
+    UINT numDevices = 0;
+    if (GetRawInputDeviceList(nullptr, &numDevices, sizeof(RAWINPUTDEVICELIST)) != 0) {
+        return false;
+    }
+    if (numDevices == 0) return false;
+
+    std::vector<RAWINPUTDEVICELIST> devs(numDevices);
+    if (GetRawInputDeviceList(devs.data(), &numDevices, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1) {
+        return false;
+    }
+    for (UINT i = 0; i < numDevices; ++i) {
+        if (devs[i].dwType == RIM_TYPEKEYBOARD) {
+            return true;
+        }
+    }
+    return false;
+#else
+    // On non-Windows platforms assume keyboard is present (alternatively implement platform check)
+    return true;
+#endif
+}
+
 void EditorInput::Update(float dt) {
     if (!m_camera || !m_window) return;
 
@@ -46,7 +77,7 @@ void EditorInput::Update(float dt) {
         m_lastX = cx;
         m_lastY = cy;
         m_firstMouse = true;
-        return;
+        //return;
     }
 
     // Keyboard movement (WASD + Z/X up/down). Use glfw polling for responsiveness.
@@ -57,30 +88,26 @@ void EditorInput::Update(float dt) {
     if (glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS)  m_camera->ProcessKeyboard(UP, dt);
     if (glfwGetKey(m_window, GLFW_KEY_X) == GLFW_PRESS)  m_camera->ProcessKeyboard(UP, -dt);
 
-    // Mouse: only when right mouse button is held (simple "look" control)
-    if (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        double xpos, ypos;
-        glfwGetCursorPos(m_window, &xpos, &ypos);
+    if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(m_window, true);
+    }
+	if (glfwGetKey(m_window, GLFW_KEY_O) == GLFW_PRESS) {
+		glfwSetWindowOpacity(m_window, 0.5f);
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_P) == GLFW_PRESS) {
+		glfwSetWindowOpacity(m_window, 1.0f);
+	}
 
-        if (m_firstMouse) {
-            m_lastX = xpos;
-            m_lastY = ypos;
-            m_firstMouse = false;
+	// Mouse movement via ImGui IO (works even without callbacks)  
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        float xoffset = io.MouseDelta.x;
+        float yoffset = -io.MouseDelta.y; // invert if your ProcessMouseMovement expects reversed Y
+        if (xoffset != 0.0f || yoffset != 0.0f) {
+            m_camera->ProcessMouseMovement(xoffset, yoffset, true);
+            // std::cout << "Mouse delta (ImGui IO): " << xoffset << ", " << yoffset << std::endl;
         }
-
-        float xoffset = static_cast<float>(xpos - m_lastX);
-        float yoffset = static_cast<float>(m_lastY - ypos); // reversed Y
-
-        m_lastX = xpos;
-        m_lastY = ypos;
-
-        // Apply mouse movement to camera rotation
-        m_camera->ProcessMouseMovement(xoffset, yoffset, true);
     }
-    else {
-        // release tracking so we don't get a huge jump when re-entering
-        m_firstMouse = true;
-    }
+    
 
     // Scroll wheel via ImGui IO (works even without callbacks)
     float wheel = io.MouseWheel;
@@ -88,3 +115,5 @@ void EditorInput::Update(float dt) {
         m_camera->ProcessMouseScroll(wheel);
     }
 }
+
+

@@ -8,14 +8,17 @@
 #include <GLFW/glfw3.h>
 
 class Camera;
+#include <vector>
 
 class EditorInput {
 public:
     explicit EditorInput(GLFWwindow* window);
     ~EditorInput();
 
+
+    bool HasKeyboardAttached() const;
     // Must be called every frame (dt in seconds)
-    void Update(float dt);
+    void Update(float dt);   
 
     // Tell the input system whether the scene viewport is currently hovered by the mouse.
     // When false, input will not affect the camera (so UI interactions work).
@@ -31,7 +34,8 @@ private:
     bool m_sceneHovered = false;
 
     // simple mouse tracking
-    double m_lastX = 0.0;
-    double m_lastY = 0.0;
+    double m_lastX;
+    double m_lastY;
     bool m_firstMouse = true;
+	bool m_mouse = true;
 };
