@@ -243,8 +243,8 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         if (ImGui::BeginMenu("Add a new mesh")) {
             if (ImGui::MenuItem("Cube")) {
 
-                // Request engine to add a plane via action callback
-               // if (m_actionCallback) m_actionCallback("AddPlane");
+                // Request engine to add a cube via action callback
+                if (m_actionCallback) m_actionCallback("AddCube");
 
 
                 
@@ -269,6 +269,9 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
         ImGui::EndPopup();
     }
+    // Update scene-window hovered state (used by EditorInput)
+    m_sceneWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
 
     ImGui::End();
     ImGui::PopStyleVar();
@@ -355,10 +358,10 @@ void SpxWindow::Rescale_frambuffer(float width, float height)
     LOG_INFO("Created FBO %u (color=%u depth=%u) size=%dx%d", (unsigned)m_fbo, (unsigned)m_fboColor, (unsigned)m_fboDepth, w, h);
 }
 
-void SpxWindow::MainObjectExplorerWindow(GLFWwindow* window)
-{
-    
-}
+//void SpxWindow::MainObjectExplorerWindow(GLFWwindow* window)
+//{
+//    
+//}
 
 void SpxWindow::SetRenderCallback(RenderCallback cb) {
     m_renderCallback = std::move(cb);

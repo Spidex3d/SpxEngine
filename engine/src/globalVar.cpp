@@ -13,4 +13,4 @@ const int OBJ_CONE = 9;
 const int OBJ_PYRAMID = 10;
 const int OBJ_TRIANGEL = 11;
 
-bool ShouldAddPlane = false;
+//bool ShouldAddPlane = false;

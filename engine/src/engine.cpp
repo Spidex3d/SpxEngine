@@ -1,6 +1,6 @@
 // engine.cpp
-#include "engine.h"
 #include <glad/glad.h>
+#include "engine.h"
 #include <GLFW/glfw3.h>
 #include "imgui\imgui.h"
 #include <imgui\imgui_impl_glfw.h>
@@ -14,6 +14,8 @@
 
 #include "../include/shader.h"
 #include "../include/asset_path.h"
+//#include "../src/Input/EditorInput.h"
+
 
 Engine::Engine() = default;
 Engine::~Engine() { Shutdown(); }
@@ -40,7 +42,13 @@ bool Engine::Initialize(const EngineConfig& config) {
         LOG_DEBUG("Failed to initialize GLAD");
         return false;
     }
-    // Create Input helper now that we have a native window for keyboard/mouse input
+
+    /*m_input = std::make_unique<EditorInput>(glfwwindow);
+    m_input->SetCamera(&m_camera);
+    LOG_INFO("EditorInput initialized");*/
+
+
+     //Create Input helper now that we have a native window for keyboard/mouse input
     m_input = std::make_unique<Input>(glfwwindow);
     if (m_input->HasKeyboardAttached()) {
         LOG_INFO("Keyboard input initialized");
@@ -99,20 +107,38 @@ bool Engine::Initialize(const EngineConfig& config) {
         int fbh = window->GetFramebufferHeight();
         if (fbw <= 0 || fbh <= 0) return;
 
-        glm::mat4 view = glm::mat4(1.0f);
         float aspect = (fbh > 0) ? static_cast<float>(fbw) / static_cast<float>(fbh) : 1.0f;
-        float orthoHalfHeight = 1.0f; // adjust to zoom in/out
-        float orthoHalfWidth = orthoHalfHeight * aspect;
-        glm::mat4 projection = glm::ortho(-orthoHalfWidth, orthoHalfWidth, -orthoHalfHeight, orthoHalfHeight, -10.0f, 10.0f);
+
+        // Use the Engine-owned camera for view/projection
+        glm::mat4 view = m_camera.GetViewMatrix();
+        glm::mat4 projection = m_camera.GetProjectionMatrix(aspect);
 
         if (m_entity) {
             // Pass the Engine-owned shader to Entity for rendering
             m_entity->RenderPlane(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx);
         }
+        //int fbw = window->GetFramebufferWidth();
+        //int fbh = window->GetFramebufferHeight();
+        //if (fbw <= 0 || fbh <= 0) return;
+
+        //glm::mat4 view = glm::mat4(1.0f);
+        //float aspect = (fbh > 0) ? static_cast<float>(fbw) / static_cast<float>(fbh) : 1.0f;
+        //float orthoHalfHeight = 1.0f; // adjust to zoom in/out
+        //float orthoHalfWidth = orthoHalfHeight * aspect;
+        //glm::mat4 projection = glm::ortho(-orthoHalfWidth, orthoHalfWidth, -orthoHalfHeight, orthoHalfHeight, -10.0f, 10.0f);
+
+        //if (m_entity) {
+        //    // Pass the Engine-owned shader to Entity for rendering
+        //    m_entity->RenderPlane(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx);
+        //}
     });
 
     // Register action callback (UI -> Engine) so clicking "Add Plane" invokes Engine::AddPlane
     window->SetActionCallback([this](const std::string& cmd) {
+        if (cmd == "AddCube") {
+            // place at center by default
+            AddCube(glm::vec3(0.0f, 0.0f, 0.0f));
+        }
         if (cmd == "AddPlane") {
             // place at center by default
             AddPlane(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -138,16 +164,35 @@ void Engine::Run() {
         m_lastTime = now;
         float dt = delta.count();
 
+
+        /*if (m_input) {
+            bool sceneHovered = false;
+            if (window) sceneHovered = window->IsSceneWindowHovered();
+            m_input->SetSceneHovered(sceneHovered);
+            m_input->Update(dt);
+        }*/
+        Camera camera;
         // 1) Poll events / update input first
         if (m_input) {
             m_input->Update();   // calls glfwPollEvents()
             if (m_input->IsKeyPressed(GLFW_KEY_ESCAPE)) {
                 if (glfwwindow) glfwSetWindowShouldClose(glfwwindow, true);
             }
+            
+            if (m_input->IsKeyPressed(GLFW_KEY_W) == GLFW_PRESS) {
+				m_camera.ProcessKeyboard(FORWARD, dt);
+            }
+            if (m_input->IsKeyPressed(GLFW_KEY_O)) {
+                if (glfwwindow) glfwSetWindowOpacity(glfwwindow, 0.5f);
+            }
+            if (m_input->IsKeyPressed(GLFW_KEY_P)) {
+                if (glfwwindow) glfwSetWindowOpacity(glfwwindow, 1.0f);
+            }
         }
         else {
             window->PollEvents();
         }
+        //SetRenderCallback
 
 
         // 2) Start ImGui frame (only if enabled)
@@ -270,7 +315,7 @@ void Engine::Run() {
                             break;
                         }
 
-                        if (ImGui::MenuItem(ICON_FA_PLUS" New")) {
+                        if (ImGui::MenuItem(ICON_FA_PLUS" New")) { //will need to know which obj to add
                             AddPlane(glm::vec3(-0.5f, 0.0f, 0.0f));
                             ImGui::CloseCurrentPopup();
                             ImGui::EndPopup();
@@ -380,6 +425,12 @@ void Engine::Shutdown() {
 
     m_running = false;
     LOG_INFO("Engine shutdown");
+}
+
+void Engine::AddCube(const glm::vec3& pos)
+{
+	if (!m_entity) return;
+	m_entity->CreateCube(m_entities, m_currentEntityIndex, m_cubeObjIdx, pos);
 }
 
 void Engine::AddPlane(const glm::vec3& pos)

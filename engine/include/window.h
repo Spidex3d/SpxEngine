@@ -1,4 +1,5 @@
 #pragma once
+#include <glad/glad.h> // for GLuint & GL calls used by framebuffer helpers
 #include <functional>
 #include <string>
 #include <imgui\ImGuiAF.h>
@@ -10,9 +11,6 @@
 #define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
-
-#include <glad/glad.h> // for GLuint & GL calls used by framebuffer helpers
-//#include <functional>
 
 // Make sure glEnable(GL_DEPTH_TEST) is set (you already do in engine) and glEnable(GL_CULL_FACE) if you want backface culling.
 
@@ -30,6 +28,7 @@ public:
     using RenderCallback = std::function<void()>; // called while FBO is bound so Engine can render into it
     using ActionCallback = std::function<void(const std::string&)>; // called when UI requests an action
 
+    
 
     explicit SpxWindow(const WindowConfig& config);
     ~SpxWindow();
@@ -56,7 +55,7 @@ public:
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
     void Rescale_frambuffer(float width, float height); // recreate at given pixel size
 
-	void MainObjectExplorerWindow(GLFWwindow* window); // object explorer window with right-click menu
+	// void MainObjectExplorerWindow(GLFWwindow* window); // object explorer window with right-click menu
 
     // Render callback management
     void SetRenderCallback(RenderCallback cb);
@@ -64,6 +63,10 @@ public:
     int GetFramebufferWidth() const;
     int GetFramebufferHeight() const;
     GLuint GetFramebufferColorTexture() const; 
+
+    // Scene-hover accessor (true while the "Main scene" window is hovered)
+    bool IsSceneWindowHovered() const { return m_sceneWindowHovered; }
+
 
 	void RenderImGui(GLFWwindow* window); // finish ImGui frame and render
     void ImGuiShutdown();
@@ -108,6 +111,9 @@ private:
     static int s_glfwRefCount; // static member declaration
 
     bool m_enableDocking = true;
+
+    // tracks whether the Main scene window is hovered (updated each frame in MainSceneWindow)
+    bool m_sceneWindowHovered = false;
 };
 
 enum FontIndex : int {

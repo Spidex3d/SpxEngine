@@ -17,4 +17,4 @@ extern const int OBJ_CONE;
 extern const int OBJ_PYRAMID;
 extern const int OBJ_TRIANGEL;
 
-extern bool ShouldAddPlane;
+//extern bool ShouldAddPlane;

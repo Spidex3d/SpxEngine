@@ -150,6 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\asset_path.cpp" />
+    <ClCompile Include="src\Camera\Camera.cpp" />
     <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\entity.cpp" />
     <ClCompile Include="src\glad.c" />
@@ -157,6 +158,7 @@
     <ClCompile Include="src\imgui_impl_glfw.cpp" />
     <ClCompile Include="src\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\input.cpp" />
+    <ClCompile Include="src\Input\EditorInput.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\textures.cpp" />
     <ClCompile Include="src\window.cpp" />
@@ -176,6 +178,8 @@
     <ClInclude Include="include\shader.h" />
     <ClInclude Include="include\textures.h" />
     <ClInclude Include="include\window.h" />
+    <ClInclude Include="src\Camera\Camera.h" />
+    <ClInclude Include="src\Input\EditorInput.h" />
     <ClInclude Include="vendors\imgui\imconfig.h" />
     <ClInclude Include="vendors\imgui\imgui.h" />
     <ClInclude Include="vendors\imgui\ImGuiAF.h" />

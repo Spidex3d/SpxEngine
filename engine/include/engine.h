@@ -5,6 +5,8 @@
 #include <chrono>
 #include <vector>
 
+#include "../src/Camera/Camera.h" // <-- new Camera class
+//#include "../src/Input/EditorInput.h" // Editor input handling
 // Forward-declare to avoid pulling shader header into every consumer
 class Shader;
 
@@ -37,8 +39,12 @@ public:
 	int GetSelectedEntityIndex() const { return m_selectedEntityIndex; }  // use for selecting entity in UI
 	void SetSelectedEntityIndex(int idx) { m_selectedEntityIndex = idx; } // set from UI
 
+    void AddCube(const glm::vec3& pos = glm::vec3(0.0f));
     // Add a plane to the scene at the given position (default center)
     void AddPlane(const glm::vec3& pos = glm::vec3(0.0f));
+
+    // Access camera
+    Camera& GetCamera() { return m_camera; }
 
 
 private:
@@ -47,17 +53,22 @@ private:
     std::unique_ptr<SpxWindow> window;
     GLFWwindow* glfwwindow = nullptr;
     std::unique_ptr<Input> m_input;
+    //std::unique_ptr<EditorInput> m_input;
 
     // Engine-owned entity state
     std::unique_ptr<Entity> m_entity;
     std::vector<std::unique_ptr<GameObj>> m_entities;
     int m_currentEntityIndex = 0;
-    int m_planeObjIdx = 0;
+	int m_planeObjIdx = 0; // plane object index
+	int m_cubeObjIdx = 0;  // cube object index
 
     int m_selectedEntityIndex = -1; // -1 = none selected
 
     // Engine-owned shader for plane rendering
     std::unique_ptr<Shader> m_planeShader;
+    // Engine-owned camera (new)
+    Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
+
 
     bool m_running = false; // main loop flag
     std::chrono::steady_clock::time_point m_lastTime;
