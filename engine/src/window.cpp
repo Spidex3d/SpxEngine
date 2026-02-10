@@ -245,18 +245,14 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
                 // Request engine to add a cube via action callback
                 if (m_actionCallback) m_actionCallback("AddCube");
-
-
-                
+                				                
             }
 
             if (ImGui::MenuItem("Plane")) {
                 
                 // Request engine to add a plane via action callback
                 if (m_actionCallback) m_actionCallback("AddPlane");
-
-                
-                
+                                
             }
             // other menu items...
             ImGui::EndMenu();
@@ -267,6 +263,22 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             ImGui::EndMenu();
         }
 
+		if (ImGui::BeginMenu("Terrain")) {
+			
+            if (ImGui::MenuItem("Add Floor")) {
+                if (m_actionCallback) m_actionCallback("AddFloor");
+            }
+                ImGui::EndMenu();
+		}
+        
+        if (ImGui::BeginMenu("Reset Camera")) {
+            if (ImGui::MenuItem("Reset Camera Position")) {
+                // reset camera position
+                if (m_actionCallback) m_actionCallback("resetCameraPos");
+            }
+            ImGui::EndMenu();
+        }
+
         ImGui::EndPopup();
     }
     // Update scene-window hovered state (used by EditorInput)
@@ -274,10 +286,12 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
     ImGui::End();
     ImGui::PopStyleVar();
-}
+    }
 
-void SpxWindow::MainScreenMenu(GLFWwindow* window)
-{
+    
+
+    void SpxWindow::MainScreenMenu(GLFWwindow* window)
+    {
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File"))
     {

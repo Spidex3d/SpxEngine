@@ -26,6 +26,7 @@ struct GameObj { // Any game object not player-related
         entPoints(0),
         isActive(true),
         isHealthPack(false),
+		HealthPackPoints(0),
         isDangerous(false),
         isCollidable(true),
         isVisible(true),
@@ -43,12 +44,13 @@ struct GameObj { // Any game object not player-related
     glm::vec3 rotation;     // Rotation of the object
     glm::mat4 modelMatrix;  // Model matrix for transformations
 
-    int  entPoints; // value or score associated with the entity
+    int  entPoints;         // value or score associated with the entity
     bool isActive;
     bool isHealthPack;
+    int  HealthPackPoints;
     bool isDangerous;
-    bool isCollidable; // Collision detection on or off, off for things like grass or small decor
-    bool isVisible;    // Render or not
+    bool isCollidable;      // Collision detection on or off, off for things like grass or small decor
+    bool isVisible;         // Render or not
 
     unsigned int tex_ID;
 };
@@ -63,27 +65,33 @@ public:
         int& CubeObjIdx, const glm::vec3& position = glm::vec3(0.0f));
 
     void RenderCube(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& CubeObjIdx);
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& CubeObjIdx, int& selectedEntityId);
 
     // Create a new plane and append to entVector (returns index of new plane via PlaneObjIdx)
     void CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
         int& PlaneObjIdx, const glm::vec3& position = glm::vec3(0.0f));
 
     void RenderPlane(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& PlaneObjIdx);
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& PlaneObjIdx, int& selectedEntityId);
+
+    void CreateFloor(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& FloorObjIdx, const glm::vec3& position = glm::vec3(0.0f));
+
+    void RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& FloorObjIdx, int& selectedEntityId);
 
 private:
 };
 // ################################################ Class Entity Ends #####################################################
 class CubeModel : public GameObj {
 public:
-    GLuint VAO, VBO;
+    GLuint CVAO, CVBO;
 
     CubeModel(int idx, const std::string& name, int Cubeobjidx) {
         entId = idx;
         entName = name;
         entObjectIndex = Cubeobjidx;
-        entTypeID = OBJ_PLANE; // from globalVar.h = 2
+        entTypeID = OBJ_CUBE; // from globalVar.h = 2
 
         // default transform
         position = glm::vec3(0.0f);
@@ -138,12 +146,12 @@ public:
         };
         		
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+        glGenVertexArrays(1, &CVAO);
+        glGenBuffers(1, &CVBO);
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(CVAO);
         // vertices
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, CVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 		// vertices position
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -164,13 +172,13 @@ public:
     }
 
     ~CubeModel() {
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
+        glDeleteVertexArrays(1, &CVAO);
+        glDeleteBuffers(1, &CVBO);
     }
 
     void DrawCube() {
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(CVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
     }
@@ -197,6 +205,7 @@ public:
         rotation = glm::vec3(0.0f);
         modelMatrix = glm::mat4(1.0f);
 
+        
         float vertices[] = {
             //Positions          Normals          Tex coords
              0.5f,  0.5f, 0.0f,  0.0f,0.0f,1.0f,  1.0f, 1.0f,
@@ -241,6 +250,74 @@ public:
 
     void DrawPlane() {
         glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // using indices
+        glBindVertexArray(0);
+    }
+
+private:
+
+};
+
+class FloorTerrain : public GameObj {
+
+    GLuint FVAO = 0, FVBO = 0, FEBO = 0;
+public:
+    FloorTerrain(int idx, const std::string& name, int Floorobjidx) {
+        entId = idx;
+        entName = name;
+        entObjectIndex = Floorobjidx;
+        entTypeID = OBJ_FLOOR; // from globalVar.h = 2
+
+        // default transform
+        position = glm::vec3(0.0f);
+        scale = glm::vec3(1.0f);
+        rotation = glm::vec3(0.0f);
+        modelMatrix = glm::mat4(1.0f);
+        // floor / ceiling 
+        float vertices[] = {
+            //Positions           Normals         Tex Coords
+             0.5f, 0.0f,  0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+             0.5f, 0.0f, -0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+            -0.5f, 0.0f, -0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+            -0.5f, 0.0f,  0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f
+        };
+        unsigned int indices[] = {
+            0, 1, 3,
+            1, 2, 3
+        };
+
+        glGenVertexArrays(1, &FVAO);
+        glBindVertexArray(FVAO);
+
+        glGenBuffers(1, &FVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, FVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glGenBuffers(1, &FEBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, FEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        // Vertex positions
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        // Normal attribute
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        // Texture coordinates
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    ~FloorTerrain() {
+        if (FVAO) { glDeleteVertexArrays(1, &FVAO); FVAO = 0; }
+        if (FVBO) { glDeleteBuffers(1, &FVBO); FVBO = 0; }
+        if (FEBO) { glDeleteBuffers(1, &FEBO); FEBO = 0; }
+    }
+
+    void DrawFloorTerrain() {
+        glBindVertexArray(FVAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // using indices
         glBindVertexArray(0);
     }

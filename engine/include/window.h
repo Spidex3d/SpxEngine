@@ -127,7 +127,8 @@ enum FontIndex : int {
 #define ICON_MAX_FA 0xf8ff
 
 
-const float FONT_SIZE = 28.0f; // comic
+//onst float FONT_SIZE = 26.0f; // comic
+const float FONT_SIZE = 12.0f; // comic
 const float SMALL_FONT_SIZE = 13.0f;
 const float TINY_FONT_SIZE = 10.0f;
 

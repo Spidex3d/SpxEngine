@@ -13,4 +13,6 @@ const int OBJ_CONE = 9;
 const int OBJ_PYRAMID = 10;
 const int OBJ_TRIANGEL = 11;
 
+const int OBJ_FLOOR = 12;
+
 //bool ShouldAddPlane = false;

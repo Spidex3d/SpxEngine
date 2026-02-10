@@ -1,15 +1,19 @@
+// src/engine.h
 #pragma once
 #include "window.h"
+//#include "input.h"
 #include <memory>
 #include <chrono>
 #include <vector>
 
 #include "../src/Camera/Camera.h" // <-- new Camera class
-#include "../src/Input/EditorInput.h" // <-- new Editor input handling
+#include "../src/Input/EditorInput.h" // Editor input handling
 // Forward-declare to avoid pulling shader header into every consumer
 class Shader;
 
 #include "entity.h" // Engine will own the Entity and the entity vector
+#include <glm/gtc/matrix_inverse.hpp> // optional, glm::inverse already available via gtc/matrix_transform if included
+
 
 struct EngineConfig {
     WindowConfig windowConfig;
@@ -35,12 +39,14 @@ public:
     SpxWindow* GetWindow();
     void Shutdown();
 
-	int GetSelectedEntityIndex() const { return m_selectedEntityIndex; }  // use for selecting entity in UI
-	void SetSelectedEntityIndex(int idx) { m_selectedEntityIndex = idx; } // set from UI
+    int GetSelectedEntityIndex() const { return m_selectedEntityIndex; }  // use for selecting entity in UI
+    void SetSelectedEntityIndex(int idx) { m_selectedEntityIndex = idx; } // set from UI
 
     void AddCube(const glm::vec3& pos = glm::vec3(0.0f));
     // Add a plane to the scene at the given position (default center)
     void AddPlane(const glm::vec3& pos = glm::vec3(0.0f));
+	// Add a floor to the scene at the given position (default center)
+	void AddFloor(const glm::vec3& pos = glm::vec3(0.0f));
 
     // Access camera
     Camera& GetCamera() { return m_camera; }
@@ -51,28 +57,43 @@ private:
     EngineConfig m_config;
     std::unique_ptr<SpxWindow> window;
     GLFWwindow* glfwwindow = nullptr;
-    //std::unique_ptr<Input> m_input;
     std::unique_ptr<EditorInput> m_input;
 
     // Engine-owned entity state
     std::unique_ptr<Entity> m_entity;
     std::vector<std::unique_ptr<GameObj>> m_entities;
-    int m_currentEntityIndex = 0;
-	int m_planeObjIdx; // plane object index
-	int m_cubeObjIdx;  // cube object index
+    int m_currentEntityIndex; //0
+    int m_planeObjIdx; // 0 plane object index
+    int m_cubeObjIdx;  // 0 cube object index
+	int m_floorObjIdx; //0 floor object index
 
     int m_selectedEntityIndex = -1; // -1 = none selected
 
     // Engine-owned shader for plane rendering
     std::unique_ptr<Shader> m_planeShader;
     // Engine-owned camera (new)
-    Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 6.0f));
+    Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
+
+    // Collision / pickup tuning
+    float m_cameraRadius = 0.4f;   // player/camera collision radius (tune to fit scale)
+    float m_pickupRadius = 0.6f;   // distance to auto-pickup health packs
+	// Health pack must be a set size for pickup to work correctly 0.5 x 0.5 x 0.5 centered at origin
+    // Collision helpers
+    bool SphereIntersectsAABB_World(const glm::vec3& sphereCenterWorld, float radius,
+        const glm::mat4& modelMatrix,
+        const glm::vec3& aabbMinLocal,
+        const glm::vec3& aabbMaxLocal,
+        glm::vec3& out_penetrationWorld);
+
+    // Called each Tick to resolve camera collisions and pickups
+    void ResolveCameraCollisionsAndPickups();
 
     bool m_running = false; // main loop flag
     std::chrono::steady_clock::time_point m_lastTime;
     // add other managers/systems as direct members here
 };
+
 
 
 

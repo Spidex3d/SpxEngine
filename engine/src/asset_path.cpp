@@ -25,12 +25,7 @@ static fs::path FindAssetsRoot()
     // 2) Start from executable directory (runtime)
     try {
         fs::path exe = fs::current_path(); // fallback to cwd
-#ifdef _WIN32
-        // Try to get actual exe path on Windows
-        /*char buf[MAX_PATH];
-        DWORD len = ::GetModuleFileNameA(NULL, buf, (DWORD)MAX_PATH);
-        if (len > 0 && len < MAX_PATH) exe = fs::path(std::string(buf, buf + len)).parent_path();*/
-#endif
+
         cur = exe;
         while (true) {
             if (fs::exists(cur / "assets")) return cur;
@@ -52,3 +47,10 @@ std::string GetAssetPath(const std::string& relativePath)
     fs::path p = assetsRoot / relativePath;
     return p.make_preferred().string();
 }
+
+//#ifdef _WIN32
+        // Try to get actual exe path on Windows
+        /*char buf[MAX_PATH];
+        DWORD len = ::GetModuleFileNameA(NULL, buf, (DWORD)MAX_PATH);
+        if (len > 0 && len < MAX_PATH) exe = fs::path(std::string(buf, buf + len)).parent_path();*/
+        //#endif
