@@ -23,7 +23,7 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
     int& CubeObjIdx, const glm::vec3& position)
 {
     stbi_set_flip_vertically_on_load(true);
-    CubeObjIdx = static_cast<int>(entVector.size());
+    //CubeObjIdx = static_cast<int>(entVector.size());
 
     auto newCube = std::make_unique<CubeModel>(currentIndex, "Default Cube", CubeObjIdx);
 
@@ -69,6 +69,7 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
 
     entVector.push_back(std::move(newCube));
     ++currentIndex;
+	++CubeObjIdx;
 }
 
 void Entity::RenderCube(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
@@ -126,7 +127,7 @@ void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     int& PlaneObjIdx, const glm::vec3& position)
 {
     stbi_set_flip_vertically_on_load(true);
-    PlaneObjIdx = static_cast<int>(entVector.size());
+   // PlaneObjIdx = static_cast<int>(entVector.size());
 
     auto newPlane = std::make_unique<PlaneModel>(currentIndex, "Default Plane", PlaneObjIdx);
 
@@ -141,7 +142,7 @@ void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
         break;
     case 1:
         newPlane->position = glm::vec3(1.1f, 0.0f, 0.0f);
-        newPlane->scale = glm::vec3(1.0f, 1.0f, 0.0f);
+        newPlane->scale = glm::vec3(1.0f, 1.0f, 0.5f);
         break;
 
     case 2:
@@ -173,6 +174,7 @@ void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     entVector.push_back(std::move(newPlane));
     ++currentIndex;
     // PlaneObjIdx updated by caller if needed
+	++PlaneObjIdx;
 }
 
 
@@ -231,7 +233,7 @@ void Entity::CreateFloor(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     int& FloorObjIdx, const glm::vec3& position)
 {
     stbi_set_flip_vertically_on_load(true);
-    FloorObjIdx = static_cast<int>(entVector.size());
+    //FloorObjIdx = static_cast<int>(entVector.size());
 
     auto newFloor = std::make_unique<FloorTerrain>(currentIndex, "Default Floor", FloorObjIdx);
     newFloor->position = position;
@@ -258,6 +260,7 @@ void Entity::CreateFloor(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
 
     entVector.push_back(std::move(newFloor));
     ++currentIndex;
+	++FloorObjIdx;
     
 }
 
