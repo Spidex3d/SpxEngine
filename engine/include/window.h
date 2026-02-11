@@ -88,6 +88,8 @@ public:
     // Return opaque native window pointer (GLFWwindow*)
     void* GetNativeWindow() const;
 
+    std::string openFileDialog();
+
 private:
     // callback
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -115,6 +117,10 @@ private:
 
     // tracks whether the Main scene window is hovered (updated each frame in MainSceneWindow)
     bool m_sceneWindowHovered = false;
+
+
+
+
 };
 
 enum FontIndex : int {
@@ -142,3 +148,5 @@ constexpr const char* FA_REG_PATH = "assets/fonts/FA-Regular-400.otf";
 constexpr const char* FA_SOLID_PATH = "assets/fonts/FA-Solid-900.otf";
 
 constexpr const char* ICON_PATH = "assets/textures/icons/icon.png";
+constexpr const char* OBJ_PATH = "assets/objModels/";
+constexpr const char* GLTF_PATH = "assets/gltfModels/";

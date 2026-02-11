@@ -160,6 +160,7 @@
     <ClCompile Include="src\Input\EditorInput.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\textures.cpp" />
+    <ClCompile Include="src\texture_utils.cpp" />
     <ClCompile Include="src\window.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="vendors\imgui\imgui_demo.cpp" />

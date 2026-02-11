@@ -30,7 +30,8 @@ struct GameObj { // Any game object not player-related
         isDangerous(false),
         isCollidable(true),
         isVisible(true),
-        tex_ID(0)
+        tex_ID(0),
+        texPath("")
     {
     }
 
@@ -53,6 +54,7 @@ struct GameObj { // Any game object not player-related
     bool isVisible;         // Render or not
 
     unsigned int tex_ID;
+    std::string texPath;
 };
 
 class Entity // Give this more thought !!

@@ -23,7 +23,6 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
     int& CubeObjIdx, const glm::vec3& position)
 {
     stbi_set_flip_vertically_on_load(true);
-    //CubeObjIdx = static_cast<int>(entVector.size());
 
     auto newCube = std::make_unique<CubeModel>(currentIndex, "Default Cube", CubeObjIdx);
 
@@ -64,7 +63,10 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
     if (texID == 0) {
         LOG_WARNING("Failed to load texture: " << full.c_str());
         // fallback: leave tex_ID = 0 and shader should handle it
+       
     }
+   // SetTextureForGameObj(newCube.get(), full);
+    
     newCube->tex_ID = texID;
 
     entVector.push_back(std::move(newCube));
@@ -127,7 +129,6 @@ void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     int& PlaneObjIdx, const glm::vec3& position)
 {
     stbi_set_flip_vertically_on_load(true);
-   // PlaneObjIdx = static_cast<int>(entVector.size());
 
     auto newPlane = std::make_unique<PlaneModel>(currentIndex, "Default Plane", PlaneObjIdx);
 
@@ -233,7 +234,6 @@ void Entity::CreateFloor(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     int& FloorObjIdx, const glm::vec3& position)
 {
     stbi_set_flip_vertically_on_load(true);
-    //FloorObjIdx = static_cast<int>(entVector.size());
 
     auto newFloor = std::make_unique<FloorTerrain>(currentIndex, "Default Floor", FloorObjIdx);
     newFloor->position = position;

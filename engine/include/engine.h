@@ -76,8 +76,8 @@ private:
 
 
     // Collision / pickup tuning
-    float m_cameraRadius = 0.4f;   // player/camera collision radius (tune to fit scale)
-    float m_pickupRadius = 0.6f;   // distance to auto-pickup health packs
+    float m_cameraRadius = 0.5f;   // player/camera collision radius (tune to fit scale)
+    float m_pickupRadius = 1.5f;   // distance to auto-pickup health packs
 	// Health pack must be a set size for pickup to work correctly 0.5 x 0.5 x 0.5 centered at origin
     // Collision helpers
     bool SphereIntersectsAABB_World(const glm::vec3& sphereCenterWorld, float radius,
