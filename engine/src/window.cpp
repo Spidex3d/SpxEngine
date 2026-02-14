@@ -2,6 +2,7 @@
 #include "window.h"
 #include <Windows.h>
 #include <memory>
+#include <vector>
 #include <commdlg.h>
 #include "imgui\imgui.h"
 #include <imgui\imgui_impl_glfw.h>
@@ -559,42 +560,59 @@ void* SpxWindow::GetNativeWindow() const {
     return reinterpret_cast<void*>(window);
 }
 
-// Open a file dialog and return the selected file path as a string. Uses Windows API.
+//New Openfile dialog and return the selected file path as a string. Uses Windows API.
 std::string SpxWindow::openFileDialog()
 {
-    OPENFILENAME ofn;
-    wchar_t filename[MAX_PATH];
+    OPENFILENAMEW ofn;
+    // Wide buffer for file path
+    std::vector<wchar_t> filename(MAX_PATH, L'\0');
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = NULL;
-    ofn.lpstrFile = filename;
-    ofn.lpstrFile[0] = '\0';
-    ofn.nMaxFile = sizeof(filename);
-    ofn.lpstrFilter = L"Image Files\0*.jpg;*.jpeg;*.png;*.bmp\0All Files\0*.*\0";
-    /*if (dialogType) {
-        ofn.lpstrFilter = L"Image Files\0*.jpg;*.jpeg;*.png;*.bmp\0All Files\0*.*\0";
-    }
-    else {
-        ofn.lpstrFilter = L"glTF Files\0*.gltf\0Obj File\0*.obj\0All Files\0*.*\0";
 
-    }*/
+    // If you have a native HWND for the window, put it here; otherwise NULL is fine.
+    ofn.hwndOwner = NULL;
+
+    ofn.lpstrFile = filename.data();
+    ofn.nMaxFile = static_cast<DWORD>(filename.size());
+
+    // Double-null terminated wide-string filter (last \0 terminates the filter list)
+    static const wchar_t filter[] =
+        L"Image Files\0*.jpg;*.jpeg;*.png;*.bmp\0"
+        L"All Files\0*.*\0\0";
+    ofn.lpstrFilter = filter;
     ofn.nFilterIndex = 1;
+
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
     ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+    // Flags: require existing path/file, Explorer-style dialog
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
 
     if (GetOpenFileNameW(&ofn)) {
-        std::wcout << L"File selected: " << ofn.lpstrFile << std::endl;
-        std::wstring ws(ofn.lpstrFile);
-        return std::string(ws.begin(), ws.end());
+        // Convert selected wide string to UTF-8
+        int required = WideCharToMultiByte(CP_UTF8, 0, ofn.lpstrFile, -1, nullptr, 0, nullptr, nullptr);
+        if (required > 0) {
+            std::vector<char> utf8(required, 0);
+            WideCharToMultiByte(CP_UTF8, 0, ofn.lpstrFile, -1, utf8.data(), required, nullptr, nullptr);
+            return std::string(utf8.data());
+        }
+        else {
+            LOG_WARNING("openFileDialog: WideCharToMultiByte failed converting path.");
+            return std::string();
+        }
     }
     else {
-        std::wcout << L"File selection failed or was canceled." << std::endl;
-        return "";
+        // If user cancelled, CommDlgExtendedError returns 0. Otherwise log the error code.
+        DWORD err = CommDlgExtendedError();
+        if (err != 0) {
+            LOG_WARNING("openFileDialog: GetOpenFileNameW failed, CommDlgExtendedError=" << err);
+        }
+        return std::string();
     }
 }
+ 
 
 
 
