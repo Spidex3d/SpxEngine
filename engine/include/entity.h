@@ -6,7 +6,9 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "../include/log.h"
 #include "../include/globalVar.h"
+#include "../include/textures.h"
 
 // Forward-declare Shader to avoid including its header here
 class Shader;
@@ -54,7 +56,7 @@ struct GameObj { // Any game object not player-related
     bool isVisible;         // Render or not
 
     unsigned int tex_ID;
-    std::string texPath;
+	std::string texPath; // path to the texture file, used for loading and debugging, not used at runtime after texture is loaded
 };
 
 class Entity // Give this more thought !!
@@ -82,8 +84,14 @@ public:
     void RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& FloorObjIdx, int& selectedEntityId);
 
+    bool SetTextureForGameObj(GameObj* obj, const std::string& path);
+
 private:
+
+    
+    
 };
+
 // ################################################ Class Entity Ends #####################################################
 class CubeModel : public GameObj {
 public:

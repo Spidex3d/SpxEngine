@@ -234,53 +234,86 @@ void Engine::Run() {
                             // toggling visible will affect rendering next frame
                         }
 
+                        ImGui::SeparatorText("Texture");
 
-                        // load the texture
-						ImGui::SeparatorText("Texture");
+                        // show path or "None"
+                        if (!selected->texPath.empty()) {
+                            ImGui::TextWrapped("Path: %s", selected->texPath.c_str());
+                        }
+                        else {
+                            ImGui::Text("Texture: None");
+                        }
 
-						// Display current texture ID (or "None")
-						std::string texLabel = (selected->tex_ID != 0) ? ("Texture ID: " + std::to_string(selected->tex_ID)) : "Texture: None";
-						ImGui::Text(texLabel.c_str());
+                        // Preview (if texture present)
+                        if (selected->tex_ID != 0) {
+                            ImGui::Text("Preview:");
+                            ImGui::Image((void*)(intptr_t)selected->tex_ID, ImVec2(128, 128));
+                        }
 
-                        // Button to change texture
+                        // Change texture button
                         if (ImGui::Button("Change Texture")) {
-                            // Call the window file dialog (blocks until user closes dialog)
+                            // Blocking Win32 dialog - returns UTF-8 path (your openFileDialog returns std::string)
                             std::string path;
                             if (window) {
                                 path = window->openFileDialog();
                             }
 
-                            
-                            
-                            
-
                             if (!path.empty()) {
-                                // Load texture (TextureManager::Load should return 0 on failure)
-                                GLuint newTexID = TextureManager::Load(path);
-                                if (newTexID != 0) {
-                                    // If you own the previous texture (not cached by TextureManager), delete it.
-                                    // If TextureManager caches textures, prefer TextureManager::Unload(oldPath) instead.
-                                    if (selected->tex_ID != 0) {
-                                        TextureManager::Unload(selected->tex_ID);
-                                    }
-                                    selected->tex_ID = newTexID;
-
-                                }
-                                else {
-                                    LOG_WARNING("Failed to load texture: " << path.c_str());
+                                if (!m_entity->SetTextureForGameObj(selected, path)) {
+                                    LOG_WARNING("Failed to set texture for entity " << selected->entId);
                                 }
                             }
                         }
+                        ImGui::SameLine();
+                        if (ImGui::Button("Clear Texture")) {
+                            // Clear/unload texture
+                            m_entity->SetTextureForGameObj(selected, "");
+                        }
 
-                        // Show current texture (preview)
-                        if (selected->tex_ID != 0) {
-                            ImGui::Text("Preview:");
-                            // For OpenGL textures, cast GLuint to ImTextureID
-                            ImGui::Image((void*)(intptr_t)selected->tex_ID, ImVec2(64, 64));
-                        }
-                        else {
-                            ImGui::Text("Texture: None");
-                        }
+
+
+      //                  // load the texture
+						//ImGui::SeparatorText("Texture");
+
+						//// Display current texture ID (or "None")
+						//std::string texLabel = (selected->tex_ID != 0) ? ("Texture ID: " + std::to_string(selected->tex_ID)) : "Texture: None";
+						//ImGui::Text(texLabel.c_str());
+
+      //                  // Button to change texture
+      //                  if (ImGui::Button("Change Texture")) {
+      //                      // Call the window file dialog (blocks until user closes dialog)
+      //                      std::string path;
+      //                      if (window) {
+      //                          path = window->openFileDialog();
+      //                      }                         
+      //                                                  
+      //                      if (!path.empty()) {
+      //                          // Load texture (TextureManager::Load should return 0 on failure)
+      //                          GLuint newTexID = TextureManager::Load(path);
+      //                          if (newTexID != 0) {
+      //                              // If you own the previous texture (not cached by TextureManager), delete it.
+      //                              // If TextureManager caches textures, prefer TextureManager::Unload(oldPath) instead.
+      //                              if (selected->tex_ID != 0) {
+      //                                  TextureManager::Unload(selected->tex_ID);
+      //                              }
+      //                              selected->tex_ID = newTexID;
+
+      //                          }
+      //                          else {
+      //                              LOG_WARNING("Failed to load texture: " << path.c_str());
+      //                          }
+      //                      }
+      //                  }
+
+      //                  // Show current texture (preview)
+      //                  if (selected->tex_ID != 0) {
+      //                      ImGui::Text("Preview:");
+      //                      // For OpenGL textures, cast GLuint to ImTextureID
+      //                      ImGui::Image((void*)(intptr_t)selected->tex_ID, ImVec2(64, 64));
+      //                  }
+      //                  else {
+      //                      ImGui::Text("Texture: None");
+      //                  }
 
 
 

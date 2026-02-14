@@ -55,19 +55,18 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
     newCube->modelMatrix = glm::translate(glm::mat4(1.0f), newCube->position);
     newCube->modelMatrix = glm::scale(newCube->modelMatrix, newCube->scale);
 
-    // Load texture via TextureManager (cached) so it persists
+    //// Load texture via SetTextureForGameObj
     std::string texPath = GetAssetPath(TEXTURE_PATH);
     std::string texFile = "crate.jpg";
     std::string full = texPath + texFile;
-    GLuint texID = TextureManager::Load(full);
-    if (texID == 0) {
-        LOG_WARNING("Failed to load texture: " << full.c_str());
-        // fallback: leave tex_ID = 0 and shader should handle it
-       
+
+    if (!SetTextureForGameObj(newCube.get(), full)) {
+        LOG_WARNING("CreateCube: Failed to set texture: " << full);
+        // newCube->tex_ID remains 0; shader should handle missing texture
     }
-   // SetTextureForGameObj(newCube.get(), full);
-    
-    newCube->tex_ID = texID;
+    else {
+        LOG_INFO("CreateCube: texture loaded tex_ID=" << newCube->tex_ID << " path=" << newCube->texPath);
+    }
 
     entVector.push_back(std::move(newCube));
     ++currentIndex;
@@ -161,16 +160,17 @@ void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     newPlane->modelMatrix = glm::translate(glm::mat4(1.0f), newPlane->position);
     newPlane->modelMatrix = glm::scale(newPlane->modelMatrix, newPlane->scale);
 
-    // Load texture via TextureManager (cached) so it persists
+    // Load texture via SetTextureForGameObj
     std::string texPath = GetAssetPath(TEXTURE_PATH);
     std::string texFile = "github.jpg";
     std::string full = texPath + texFile;
-    GLuint texID = TextureManager::Load(full);
-    if (texID == 0) {
-        LOG_WARNING("Failed to load texture: " << full.c_str());
-        // fallback: leave tex_ID = 0 and shader should handle it
+
+    if (!SetTextureForGameObj(newPlane.get(), full)) {
+        LOG_WARNING("CreatePlane: Failed to set texture: " << full);
     }
-    newPlane->tex_ID = texID;
+    else {
+        LOG_INFO("CreatePlane: texture loaded tex_ID=" << newPlane->tex_ID << " path=" << newPlane->texPath);
+    }
 
     entVector.push_back(std::move(newPlane));
     ++currentIndex;
@@ -247,16 +247,17 @@ void Entity::CreateFloor(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
     newFloor->modelMatrix = glm::translate(glm::mat4(1.0f), newFloor->position);
     newFloor->modelMatrix = glm::scale(newFloor->modelMatrix, newFloor->scale);
 
-    // Load texture via TextureManager (cached) so it persists
+    // Load texture via SetTextureForGameObj
     std::string texPath = GetAssetPath(TEXTURE_PATH);
     std::string texFile = "stone.jpg";
     std::string full = texPath + texFile;
-    GLuint texID = TextureManager::Load(full);
-    if (texID == 0) {
-        LOG_WARNING("Failed to load texture: " << full.c_str());
-        // fallback: leave tex_ID = 0 and shader should handle it
+
+    if (!SetTextureForGameObj(newFloor.get(), full)) {
+        LOG_WARNING("CreateFloor: Failed to set texture: " << full);
     }
-    newFloor->tex_ID = texID;
+    else {
+        LOG_INFO("CreateFloor: texture loaded tex_ID=" << newFloor->tex_ID << " path=" << newFloor->texPath);
+    }
 
     entVector.push_back(std::move(newFloor));
     ++currentIndex;
@@ -313,4 +314,68 @@ void Entity::RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4&
     // reset selection uniform (optional)
     shader->SetUniformInt("u_selected", 0);
 
+}
+
+//bool SetTextureForGameObj(GameObj* obj, const std::string& path) {
+//    if (!obj) return false;
+//
+//    if (!path.empty() && path == obj->texPath) {
+//        LOG_INFO("SetTextureForGameObj: path unchanged, tex_ID=" << obj->tex_ID);
+//        return true;
+//    }
+//
+//    if (!obj->texPath.empty()) {
+//        LOG_INFO("SetTextureForGameObj: unloading old path " << obj->texPath);
+//        TextureManager::Unload(obj->texPath);
+//        obj->texPath.clear();
+//    }
+//    else if (obj->tex_ID != 0) {
+//        LOG_INFO("SetTextureForGameObj: unloading old tex ID " << obj->tex_ID);
+//        TextureManager::Unload(obj->tex_ID);
+//    }
+//    obj->tex_ID = 0;
+//
+//    if (!path.empty()) {
+//        LOG_INFO("SetTextureForGameObj: loading " << path);
+//        GLuint tex = TextureManager::Load(path);
+//        if (tex == 0) {
+//            LOG_ERROR("SetTextureForGameObj: Failed to load " << path);
+//            return false;
+//        }
+//        obj->tex_ID = tex;
+//        obj->texPath = path;
+//        LOG_INFO("SetTextureForGameObj: loaded tex_ID=" << tex);
+//    }
+//
+//    return true;
+//}
+
+bool Entity::SetTextureForGameObj(GameObj* obj, const std::string& path)
+{
+    if (!obj) return false;
+
+    // If same path, nothing to do
+    if (!path.empty() && path == obj->texPath) return true;
+
+    // Unload old texture (by path if available, fallback to ID)
+    if (!obj->texPath.empty()) {
+        TextureManager::Unload(obj->texPath);
+        obj->texPath.clear();
+    }
+    else if (obj->tex_ID != 0) {
+        // manager supports unloading by ID too
+        TextureManager::Unload(obj->tex_ID);
+    }
+    obj->tex_ID = 0;
+
+    if (!path.empty()) {
+        GLuint tex = TextureManager::Load(path);
+        if (tex == 0) {
+            LOG_ERROR("SetTextureForGameObj: Failed to load " << path.c_str());
+            return false;
+        }
+        obj->tex_ID = tex;
+        obj->texPath = path;
+    }
+    return true;
 }
