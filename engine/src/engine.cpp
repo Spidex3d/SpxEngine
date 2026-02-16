@@ -8,6 +8,7 @@
 #include <imgui\ImGuiAF.h>
 #include "log.h"
 #include <iostream>
+#include <cfloat>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -268,56 +269,7 @@ void Engine::Run() {
                         if (ImGui::Button("Clear Texture")) {
                             // Clear/unload texture
                             m_entity->SetTextureForGameObj(selected, "");
-                        }
-
-
-
-      //                  // load the texture
-						//ImGui::SeparatorText("Texture");
-
-						//// Display current texture ID (or "None")
-						//std::string texLabel = (selected->tex_ID != 0) ? ("Texture ID: " + std::to_string(selected->tex_ID)) : "Texture: None";
-						//ImGui::Text(texLabel.c_str());
-
-      //                  // Button to change texture
-      //                  if (ImGui::Button("Change Texture")) {
-      //                      // Call the window file dialog (blocks until user closes dialog)
-      //                      std::string path;
-      //                      if (window) {
-      //                          path = window->openFileDialog();
-      //                      }                         
-      //                                                  
-      //                      if (!path.empty()) {
-      //                          // Load texture (TextureManager::Load should return 0 on failure)
-      //                          GLuint newTexID = TextureManager::Load(path);
-      //                          if (newTexID != 0) {
-      //                              // If you own the previous texture (not cached by TextureManager), delete it.
-      //                              // If TextureManager caches textures, prefer TextureManager::Unload(oldPath) instead.
-      //                              if (selected->tex_ID != 0) {
-      //                                  TextureManager::Unload(selected->tex_ID);
-      //                              }
-      //                              selected->tex_ID = newTexID;
-
-      //                          }
-      //                          else {
-      //                              LOG_WARNING("Failed to load texture: " << path.c_str());
-      //                          }
-      //                      }
-      //                  }
-
-      //                  // Show current texture (preview)
-      //                  if (selected->tex_ID != 0) {
-      //                      ImGui::Text("Preview:");
-      //                      // For OpenGL textures, cast GLuint to ImTextureID
-      //                      ImGui::Image((void*)(intptr_t)selected->tex_ID, ImVec2(64, 64));
-      //                  }
-      //                  else {
-      //                      ImGui::Text("Texture: None");
-      //                  }
-
-
-
-
+                        }    
 
                         // Buttons for convenience
                         if (ImGui::Button("Focus")) {
@@ -421,20 +373,56 @@ void Engine::Run() {
             window->MainSceneWindow(glfwwindow);
 			window->MainScreenMenu(glfwwindow);
 
+            // ##################################################### Picking ########################################################
+                       
+            if (m_input) {
+                ImVec2 vpMin = window->GetSceneViewportPos();
+                ImVec2 vpSize = window->GetSceneViewportSize();
+                ImVec2 mousePos = ImGui::GetMousePos();
+
+                bool mouseInsideViewport =
+                    (mousePos.x >= vpMin.x && mousePos.x <= vpMin.x + vpSize.x &&
+                        mousePos.y >= vpMin.y && mousePos.y <= vpMin.y + vpSize.y);
+
+                // Only call when left mouse is down AND cursor is inside the viewport (safety)
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && mouseInsideViewport) {
+                    /*LOG_INFO("FORCE: About to call TryPick; mousePos=(" << mousePos.x << "," << mousePos.y
+                        << ") vpMin=(" << vpMin.x << "," << vpMin.y << ") vpSize=(" << vpSize.x << "," << vpSize.y << ")");*/
+
+                    int picked = m_input->TryPick(m_entities, vpMin, vpSize);
+
+                    //LOG_INFO("FORCE: TryPick returned " << picked);
+                    if (picked >= 0) {
+                        m_selectedEntityIndex = picked;
+                       /* LOG_INFO("FORCE: Picked entity index " << picked << " entId=" << m_entities[picked]->entId);*/
+                    }
+                    else {
+                        m_selectedEntityIndex = -1;
+                       /* LOG_INFO("FORCE: no entity picked");*/
+                    }
+                }
+                
+            }
+
+        }
             if (m_input) {
                 bool sceneHovered = false;
                 if (window) sceneHovered = window->IsSceneWindowHovered();
                 m_input->SetSceneHovered(sceneHovered);
                 m_input->Update(dt);
-				//LOG_TRACE("Engine::Run: Input updated");
+                //LOG_TRACE("Engine::Run: Input updated");
             }
             else {
-				// window->PollEvents();
+            // window->PollEvents();
             }
 
-                window->PollEvents();
+        window->PollEvents();
 
-        }
+        // ################################################# End Picking ########################################################
+
+
+
+
 
         // 4) Update / render your scene AFTER building UI so UI overlays on top
         Tick(dt);
@@ -523,6 +511,11 @@ static glm::vec3 ClampPointToAABB(const glm::vec3& p, const glm::vec3& minB, con
         glm::clamp(p.z, minB.z, maxB.z)
     );
 }
+// ######################################################################################################################
+// ##################################################### Picking ########################################################
+// ######################################################################################################################
+
+// #################################################### Picking end #####################################################
 
 bool Engine::SphereIntersectsAABB_World(const glm::vec3& sphereCenterWorld, float radius, const glm::mat4& modelMatrix, const glm::vec3& aabbMinLocal, const glm::vec3& aabbMaxLocal, glm::vec3& out_penetrationWorld)
 {
@@ -597,22 +590,6 @@ void Engine::ResolveCameraCollisionsAndPickups()
             // push camera out of penetration
             camPos += penetrationWorld;
         }
-
-
-        // debug
-        //glm::vec3 objWorldPosDebug = glm::vec3(obj->modelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-       
-        //float d = glm::length(objWorldPosDebug - camPos);
-       /* std::cout << std::fixed << std::setprecision(3)
-          << "Pickup check: entId=" << obj->entId
-          << " isHealth=" << (obj->isHealthPack ? 1 : 0)
-          << " isActive=" << (obj->isActive ? 1 : 0)
-          << " objPos=(" << obj->position.x << "," << obj->position.y << "," << obj->position.z << ")"
-          << " modelPos=(" << objWorldPosDebug.x << "," << objWorldPosDebug.y << "," << objWorldPosDebug.z << ")"
-          << " camPos=(" << camPos.x << "," << camPos.y << "," << camPos.z << ")"
-          << " distance=" << d
-          << " pickupRadius=" << m_pickupRadius
-          << std::endl;*/
 
 
         // pickup detection for health packs

@@ -13,9 +13,14 @@
 #include "../include/asset_path.h" // for GetAssetPath
 #include "../include/globalVar.h"
 #include "../include/entity.h"
+#include "../include/engine.h" // for Engine and EngineConfig
+#include "../src/input/EditorInput.h" // Include the appropriate header file for EditorInput 
+
+
 #include "log.h"
 #include <iostream>
 #include <minwindef.h>
+
 
 // initialize static refcount
 int SpxWindow::s_glfwRefCount = 0;
@@ -225,15 +230,67 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         Unbinde_Frambuffer();
 
         // Draw the resulting texture inside the ImGui window.
-        ImGui::GetWindowDrawList()->AddImage((void*)(intptr_t)m_fboColor,
-            ImVec2(pos.x, pos.y),
-            ImVec2(pos.x + window_width, pos.y + window_height),
-            ImVec2(0, 1), ImVec2(1, 0)); // flip vertically for GL texture coords
+        //ImGui::GetWindowDrawList()->AddImage((void*)(intptr_t)m_fboColor,
+        //    ImVec2(pos.x, pos.y),
+        //    ImVec2(pos.x + window_width, pos.y + window_height),
+        //    ImVec2(0, 1), ImVec2(1, 0)); // flip vertically for GL texture coords
+
+        ImGui::Image((void*)(intptr_t)m_fboColor,
+            ImVec2(window_width, window_height),
+            ImVec2(0, 1), ImVec2(1, 0)); // uv0, uv1 flipped for GL
+
+     // ##################################################### Picking ########################################################
+            // After drawing the resulting texture inside the ImGui window:
+            // store viewport rectangle for picking (screen coords and UI units)
+            m_sceneViewportPos = ImGui::GetItemRectMin();
+            m_sceneViewportSize = ImGui::GetItemRectSize();
     }
     else {
         // fallback: draw empty box or placeholder text
         ImGui::TextWrapped("Frame buffer not initialized.");
     }
+
+    // ##################################################### Picking ########################################################
+    
+    
+    //ImVec2 vpMin = ImGui::GetItemRectMin();
+    //ImVec2 vpSize = ImGui::GetItemRectSize();
+
+    //editorInput.SetSceneHovered(ImGui::IsItemHovered());
+
+    //if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse) {
+    //    // Use engine accessor (add one if it doesn't exist)
+    //    const auto& entities = m_engine->GetEntities();                 // implement GetEntities()
+    //    int picked = editorInput.TryPick(entities, vpMin, vpSize);
+    //    if (picked >= 0) {
+    //        m_engine->SetSelectedEntityIndex(picked);                   // implement setter
+    //        LOG_INFO("Picked entity index " << picked << " entId=" << entities[picked]->entId);
+    //    }
+    //    else {
+    //        m_engine->SetSelectedEntityIndex(-1);
+    //    }
+    //}
+
+    // after drawing the scene image:
+    //ImVec2 vpMin = ImGui::GetItemRectMin();
+    //ImVec2 vpSize = ImGui::GetItemRectSize();
+
+    //// mark hovered so EditorInput.Update can know if scene is hovered
+    //editorInput.SetSceneHovered(ImGui::IsItemHovered());
+
+    //// On click, ask the editor input to pick
+    //if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse) {
+    //    int picked = editorInput.TryPick(m_entities, vpMin, vpSize); // m_entities is your vector
+    //    if (picked >= 0) {
+    //        m_selectedEntityIndex = picked;
+    //        LOG_INFO("Picked entity index " << picked << " entId=" << m_entities[picked]->entId);
+    //    }
+    //    else {
+    //        m_selectedEntityIndex = -1;
+    //    }
+    //}
+    // ################################################# End Picking ########################################################
+
 
     // Detect right-click for popup menu (existing UI code)
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -291,7 +348,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
     ImGui::End();
     ImGui::PopStyleVar();
-    }
+}
 
     
 
@@ -471,6 +528,8 @@ void SpxWindow::SetActionCallback(ActionCallback cb)
 int SpxWindow::GetFramebufferWidth() const { return m_fbWidth; }
 int SpxWindow::GetFramebufferHeight() const { return m_fbHeight; }
 GLuint SpxWindow::GetFramebufferColorTexture() const { return m_fboColor; }
+
+
 
 void SpxWindow::RenderImGui(GLFWwindow* window)
 {

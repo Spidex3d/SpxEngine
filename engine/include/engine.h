@@ -74,7 +74,6 @@ private:
     // Engine-owned camera (new)
     Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
-
     // Collision / pickup tuning
     float m_cameraRadius = 0.5f;   // player/camera collision radius (tune to fit scale)
     float m_pickupRadius = 1.5f;   // distance to auto-pickup health packs

@@ -22,6 +22,8 @@ struct WindowConfig {
     bool vsync = true;
 };
 
+//class Engine; // forward declaration
+
 class SpxWindow {
 public:
     using ResizeCallback = std::function<void(int width, int height)>;
@@ -64,6 +66,9 @@ public:
     int GetFramebufferWidth() const;
     int GetFramebufferHeight() const;
     GLuint GetFramebufferColorTexture() const; 
+    // ##################################################### Picking ########################################################
+    ImVec2 GetSceneViewportPos() const { return m_sceneViewportPos; }
+    ImVec2 GetSceneViewportSize() const { return m_sceneViewportSize; }
 
     // Scene-hover accessor (true while the "Main scene" window is hovered)
     bool IsSceneWindowHovered() const { return m_sceneWindowHovered; }
@@ -90,6 +95,7 @@ public:
 
     std::string openFileDialog();
 
+    
 private:
     // callback
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -98,6 +104,8 @@ private:
     GLFWwindow* window = nullptr;
     WindowConfig m_config;
     ResizeCallback m_resizeCallback = nullptr;
+
+    //Engine* m_engine = nullptr; // add this
 
     // Framebuffer resources for the main scene view
     GLuint m_fbo = 0;
@@ -114,6 +122,10 @@ private:
     static int s_glfwRefCount; // static member declaration
 
     bool m_enableDocking = true;
+
+    // ##################################################### Picking ########################################################
+    ImVec2 m_sceneViewportPos = ImVec2(0, 0);
+    ImVec2 m_sceneViewportSize = ImVec2(0, 0);
 
     // tracks whether the Main scene window is hovered (updated each frame in MainSceneWindow)
     bool m_sceneWindowHovered = false;
