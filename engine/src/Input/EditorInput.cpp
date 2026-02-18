@@ -245,6 +245,35 @@ int EditorInput::TryPick(const std::vector<std::unique_ptr<GameObj>>& entities, 
 
     return bestIndex;
 }
+// new
+int EditorInput::ProcessViewportPick(const std::vector<std::unique_ptr<GameObj>>& entities, const ImVec2& viewportPos, const ImVec2& viewportSize, bool sceneHovered, float dt)
+{
+    // Keep EditorInput internal hovered state in sync and run the per-frame update.
+    SetSceneHovered(sceneHovered);
+    // Note: Update uses m_camera etc. Pass dt so camera movement still works while picking.
+    Update(dt);
+
+    // Early-out if no camera or no entities
+    if (!m_camera) return -1;
+    if (entities.empty()) return -1;
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+    bool mouseInsideViewport =
+        (mousePos.x >= viewportPos.x && mousePos.x <= viewportPos.x + viewportSize.x &&
+            mousePos.y >= viewportPos.y && mousePos.y <= viewportPos.y + viewportSize.y);
+
+    // Trigger pick when left button is held and cursor is inside viewport,
+    // and no ImGui widget is actively using the mouse (avoids interfering with UI).
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && mouseInsideViewport && ImGui::GetActiveID() == 0) {
+        // Call existing TryPick helper which does ray-unproject + AABB tests
+        int picked = TryPick(entities, viewportPos, viewportSize);
+        return picked;
+    }
+
+    return -1;
+}
 
 
 

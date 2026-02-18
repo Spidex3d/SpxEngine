@@ -27,6 +27,10 @@ public:
     // ##################################################### Picking ########################################################
    // Picking: returns index into entities vector, or -1 if none.
     int TryPick(const std::vector<std::unique_ptr<GameObj>>& entities, const ImVec2& viewportPos, const ImVec2& viewportSize);
+    
+    int ProcessViewportPick(const std::vector<std::unique_ptr<GameObj>>& entities, const ImVec2& viewportPos,
+    // ##################################################### Picking ########################################################
+        const ImVec2& viewportSize, bool sceneHovered, float dt);
    
     // Tell the input system whether the scene viewport is currently hovered by the mouse.
     // When false, input will not affect the camera (so UI interactions work).

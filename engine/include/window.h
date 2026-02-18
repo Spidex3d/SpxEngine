@@ -129,7 +129,9 @@ private:
 
     // tracks whether the Main scene window is hovered (updated each frame in MainSceneWindow)
     bool m_sceneWindowHovered = false;
-
+	// Buttons for toolbar (using my icons)
+    int iconW = 0, iconH = 0;
+    GLuint m_playIconTex = 0;
 
 
 
@@ -159,6 +161,7 @@ constexpr const char* ROBOTO_REG_PATH = "assets/fonts/Roboto-Regular.ttf";
 constexpr const char* FA_REG_PATH = "assets/fonts/FA-Regular-400.otf";
 constexpr const char* FA_SOLID_PATH = "assets/fonts/FA-Solid-900.otf";
 
-constexpr const char* ICON_PATH = "assets/textures/icons/icon.png";
-constexpr const char* OBJ_PATH = "assets/objModels/";
-constexpr const char* GLTF_PATH = "assets/gltfModels/";
+constexpr const char* ICON_PATH = "assets/textures/icons/icon.png"; // Icon for window
+constexpr const char* ICON_PLAY_BUTTON = "assets/textures/icons/Play.png"; // Icon path for window and toolbar buttons (can be used for any ImageButton in ImGui)
+constexpr const char* OBJ_PATH = "assets/Models/objModels/";
+constexpr const char* GLTF_PATH = "assets/Models/gltfModels/";

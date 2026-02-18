@@ -15,6 +15,7 @@
 #include "../include/entity.h"
 #include "../include/engine.h" // for Engine and EngineConfig
 #include "../src/input/EditorInput.h" // Include the appropriate header file for EditorInput 
+#include "../src/Ui/icon_loader.h"
 
 
 #include "log.h"
@@ -201,6 +202,78 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImGuiIO& io = ImGui::GetIO();
 
+    // I would like to draw some sort of toolbar at the top of the MainSceneWindow just for some icons and quick actions,
+    {
+        // toolbar height in UI units
+        const float tbHeight = 20.0f;
+        // make a child row so the toolbar can be styled and won't interfere with other content
+        ImGui::BeginChild("##scene_toolbar", ImVec2(ImGui::GetContentRegionAvail().x, tbHeight), false, ImGuiWindowFlags_NoDecoration);
+
+        // tighten spacing for the toolbar
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+
+        
+        ImGui::PushID("top_Buttons");
+       
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // normal
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f)); // hover
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
+        //ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f)); // active/click
+        
+		ImGui::GetStyle().FrameBorderSize = 0.3f; // no border
+		ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners
+
+        ImGui::SameLine();
+        // Small separator
+        ImGui::Text("|"); ImGui::SameLine();
+
+        // ICON_FA_CROSSHAIRS ICON_FA_CUBE  ICON_FA_CUBES ICON_FA_EDIT
+		// ICON_FA_EXPAND_ARROWS_ALT ICON_FA_EXPAND ICON_FA_FILE ICON_FA_FOLDER ICON_FA_FOLDER_OPEN
+        // Transform / view tools
+       // if (ImGui::Button(ICON_FA_FOLDER_OPEN "##Settings", ImVec2(30, 0))) {
+        if (ImGui::Button(ICON_FA_COGS "##Settings", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("OpenSettings");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Settings");
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_EYE "##Toggle", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("ToggleVisibility");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle");
+        // Fill remaining horizontal space (optional)
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8.0f);
+        ImGui::Dummy(ImVec2(0.0f, 0.0f));
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 300); // push next group to right
+
+        // Right-aligned quick actions
+        if (ImGui::Button(ICON_FA_PLAY "##play", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("Play");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Play");
+        
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_PAUSE " ##Pause", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("Pause");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_IMAGE " ##Render", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("RenderSettings");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("RenderSettings");
+        ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
+        ImGui::PopID();
+        ImGui::EndChild();
+
+        // Small spacing after toolbar
+        ImGui::Spacing();
+    }
+    // ######################################################### End Toolbar #########################################################
+
     // Determine desired framebuffer pixel size (account for HiDPI scale)
     int desired_w = static_cast<int>(window_width * io.DisplayFramebufferScale.x);
     int desired_h = static_cast<int>(window_height * io.DisplayFramebufferScale.y);
@@ -229,11 +302,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         // Done rendering to FBO
         Unbinde_Frambuffer();
 
-        // Draw the resulting texture inside the ImGui window.
-        //ImGui::GetWindowDrawList()->AddImage((void*)(intptr_t)m_fboColor,
-        //    ImVec2(pos.x, pos.y),
-        //    ImVec2(pos.x + window_width, pos.y + window_height),
-        //    ImVec2(0, 1), ImVec2(1, 0)); // flip vertically for GL texture coords
+        
 
         ImGui::Image((void*)(intptr_t)m_fboColor,
             ImVec2(window_width, window_height),
@@ -249,49 +318,11 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         // fallback: draw empty box or placeholder text
         ImGui::TextWrapped("Frame buffer not initialized.");
     }
-
-    // ##################################################### Picking ########################################################
+	
     
+
     
-    //ImVec2 vpMin = ImGui::GetItemRectMin();
-    //ImVec2 vpSize = ImGui::GetItemRectSize();
-
-    //editorInput.SetSceneHovered(ImGui::IsItemHovered());
-
-    //if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse) {
-    //    // Use engine accessor (add one if it doesn't exist)
-    //    const auto& entities = m_engine->GetEntities();                 // implement GetEntities()
-    //    int picked = editorInput.TryPick(entities, vpMin, vpSize);
-    //    if (picked >= 0) {
-    //        m_engine->SetSelectedEntityIndex(picked);                   // implement setter
-    //        LOG_INFO("Picked entity index " << picked << " entId=" << entities[picked]->entId);
-    //    }
-    //    else {
-    //        m_engine->SetSelectedEntityIndex(-1);
-    //    }
-    //}
-
-    // after drawing the scene image:
-    //ImVec2 vpMin = ImGui::GetItemRectMin();
-    //ImVec2 vpSize = ImGui::GetItemRectSize();
-
-    //// mark hovered so EditorInput.Update can know if scene is hovered
-    //editorInput.SetSceneHovered(ImGui::IsItemHovered());
-
-    //// On click, ask the editor input to pick
-    //if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse) {
-    //    int picked = editorInput.TryPick(m_entities, vpMin, vpSize); // m_entities is your vector
-    //    if (picked >= 0) {
-    //        m_selectedEntityIndex = picked;
-    //        LOG_INFO("Picked entity index " << picked << " entId=" << m_entities[picked]->entId);
-    //    }
-    //    else {
-    //        m_selectedEntityIndex = -1;
-    //    }
-    //}
-    // ################################################# End Picking ########################################################
-
-
+	
     // Detect right-click for popup menu (existing UI code)
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
@@ -549,7 +580,7 @@ void SpxWindow::ImGuiShutdown()
 {
     // destroy framebuffer resources when shutting down
     DestroyFBO(m_fbo, m_fboColor, m_fboDepth);
-
+    if (m_playIconTex) { glDeleteTextures(1, &m_playIconTex); m_playIconTex = 0; }
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

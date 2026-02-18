@@ -66,6 +66,9 @@
     <ClCompile Include="src\Input\EditorInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Ui\icon_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h">
@@ -134,6 +137,9 @@
     <ClInclude Include="src\Input\EditorInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Ui\icon_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\engine.lib" />
@@ -143,6 +149,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\textures\icons\Icon.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\textures\icons\Play.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

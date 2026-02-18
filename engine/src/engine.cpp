@@ -368,60 +368,49 @@ void Engine::Run() {
             }
 			// ######################## End Main Object Explorer Window ####################
 
+            // main rescorce window for Textuers, models, help doc's, lighting, Camera, ect
+			ImGui::Begin("Resources Inspector");
+			ImGui::Text("Texture Resources:");
+
+            if (ImGui::CollapsingHeader(ICON_FA_EDIT" Texture Settings", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+				// Add your texture settings UI elements here
+                // And display all the textures that we can use
+				ImGui::Text("Texture filtering, wrapping, etc. can go here.");
+            }
+
+            
+
+            
+			
+
+			ImGui::End();
+
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound
             window->MainSceneWindow(glfwwindow);
 			window->MainScreenMenu(glfwwindow);
 
-            // ##################################################### Picking ########################################################
-                       
+         // ##################################################### Picking ########################################################
+		 // ProcessViewportPick is in EditorInput and returns the picked entity index or -1 if none.
+         // It also updates internal hovered state for the viewport.              
             if (m_input) {
                 ImVec2 vpMin = window->GetSceneViewportPos();
                 ImVec2 vpSize = window->GetSceneViewportSize();
-                ImVec2 mousePos = ImGui::GetMousePos();
+                bool sceneHovered = window->IsSceneWindowHovered();
 
-                bool mouseInsideViewport =
-                    (mousePos.x >= vpMin.x && mousePos.x <= vpMin.x + vpSize.x &&
-                        mousePos.y >= vpMin.y && mousePos.y <= vpMin.y + vpSize.y);
-
-                // Only call when left mouse is down AND cursor is inside the viewport (safety)
-                if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && mouseInsideViewport) {
-                    /*LOG_INFO("FORCE: About to call TryPick; mousePos=(" << mousePos.x << "," << mousePos.y
-                        << ") vpMin=(" << vpMin.x << "," << vpMin.y << ") vpSize=(" << vpSize.x << "," << vpSize.y << ")");*/
-
-                    int picked = m_input->TryPick(m_entities, vpMin, vpSize);
-
-                    //LOG_INFO("FORCE: TryPick returned " << picked);
-                    if (picked >= 0) {
-                        m_selectedEntityIndex = picked;
-                       /* LOG_INFO("FORCE: Picked entity index " << picked << " entId=" << m_entities[picked]->entId);*/
-                    }
-                    else {
-                        m_selectedEntityIndex = -1;
-                       /* LOG_INFO("FORCE: no entity picked");*/
-                    }
+                int picked = m_input->ProcessViewportPick(m_entities, vpMin, vpSize, sceneHovered, dt);
+                if (picked >= 0) {
+                    m_selectedEntityIndex = picked;
+                    LOG_INFO("Picked entity index " << picked << " entId = " << m_entities[picked]->entId);
                 }
-                
+                // Note: EditorInput::ProcessViewportPick already calls Update(dt) and SetSceneHovered(sceneHovered).
             }
-
+                        
         }
-            if (m_input) {
-                bool sceneHovered = false;
-                if (window) sceneHovered = window->IsSceneWindowHovered();
-                m_input->SetSceneHovered(sceneHovered);
-                m_input->Update(dt);
-                //LOG_TRACE("Engine::Run: Input updated");
-            }
-            else {
-            // window->PollEvents();
-            }
-
-        window->PollEvents();
-
         // ################################################# End Picking ########################################################
-
-
-
+            
+        window->PollEvents();
 
 
         // 4) Update / render your scene AFTER building UI so UI overlays on top

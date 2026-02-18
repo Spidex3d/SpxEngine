@@ -160,6 +160,7 @@
     <ClCompile Include="src\Input\EditorInput.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\textures.cpp" />
+    <ClCompile Include="src\Ui\icon_loader.cpp" />
     <ClCompile Include="src\window.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="vendors\imgui\imgui_demo.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="include\window.h" />
     <ClInclude Include="src\Camera\Camera.h" />
     <ClInclude Include="src\Input\EditorInput.h" />
+    <ClInclude Include="src\Ui\icon_loader.h" />
     <ClInclude Include="vendors\imgui\imconfig.h" />
     <ClInclude Include="vendors\imgui\imgui.h" />
     <ClInclude Include="vendors\imgui\ImGuiAF.h" />
@@ -199,6 +201,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\textures\icons\Icon.png" />
+    <Image Include="assets\textures\icons\Play.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\default.frag" />
