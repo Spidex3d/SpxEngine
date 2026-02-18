@@ -233,6 +233,11 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 		// ICON_FA_EXPAND_ARROWS_ALT ICON_FA_EXPAND ICON_FA_FILE ICON_FA_FOLDER ICON_FA_FOLDER_OPEN
         // Transform / view tools
        // if (ImGui::Button(ICON_FA_FOLDER_OPEN "##Settings", ImVec2(30, 0))) {
+        if (ImGui::Button(ICON_FA_EXPAND "##EditOn", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("EditOn");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Edit mode");
+        ImGui::SameLine();
         if (ImGui::Button(ICON_FA_COGS "##Settings", ImVec2(30, 0))) {
             if (m_actionCallback) m_actionCallback("OpenSettings");
         }
