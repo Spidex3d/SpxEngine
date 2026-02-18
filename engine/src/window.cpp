@@ -202,7 +202,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImGuiIO& io = ImGui::GetIO();
 
-    // I would like to draw some sort of toolbar at the top of the MainSceneWindow just for some icons and quick actions,
+    // ################################### toolbar at the top of the MainSceneWindow ######################################
     {
         // toolbar height in UI units
         const float tbHeight = 20.0f;
@@ -219,20 +219,24 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // normal
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f)); // hover
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
-        //ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f)); // active/click
         
-		ImGui::GetStyle().FrameBorderSize = 0.3f; // no border
-		ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners
+		ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
+		ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
 
-        ImGui::SameLine();
+        //ImGui::SameLine();
         // Small separator
-        ImGui::Text("|"); ImGui::SameLine();
+        
 
         // ICON_FA_CROSSHAIRS ICON_FA_CUBE  ICON_FA_CUBES ICON_FA_EDIT
 		// ICON_FA_EXPAND_ARROWS_ALT ICON_FA_EXPAND ICON_FA_FILE ICON_FA_FOLDER ICON_FA_FOLDER_OPEN
+        //  ICON_FA_PALETTE ICON_FA_OBJECT_GROUP ICON_FA_OBJECT_UNGROUP ICON_FA_SAVE ICON_FA_SPIDER
+        //  ICON_FA_STREET_VIEW ICON_FA_TOOLS ICON_FA_TV
         // Transform / view tools
-       // if (ImGui::Button(ICON_FA_FOLDER_OPEN "##Settings", ImVec2(30, 0))) {
+        if (ImGui::Button(ICON_FA_WATER "##Settings", ImVec2(30, 0))) {}
+        ImGui::SameLine();
+		// Edit mode, settings, toggle visibility keep button hilighted when active (for example if we are in edit mode,
+        // the Edit button should be highlighted)
         if (ImGui::Button(ICON_FA_EXPAND "##EditOn", ImVec2(30, 0))) {
             if (m_actionCallback) m_actionCallback("EditOn");
         }
@@ -269,6 +273,19 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             if (m_actionCallback) m_actionCallback("RenderSettings");
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("RenderSettings");
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_VIDEO "##Reset Cam", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("resetCameraPos");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset camera position");
+        ImGui::SameLine();
+		// focus the camera on the selected object in the scene (if any)
+        if (ImGui::Button(ICON_FA_VIDEO "##focus Cam", ImVec2(30, 0))) {
+            if (m_actionCallback) m_actionCallback("focusSelected");
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
+
+
         ImGui::PopStyleVar(2);
 		ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
         ImGui::PopID();
@@ -277,7 +294,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         // Small spacing after toolbar
         ImGui::Spacing();
     }
-    // ######################################################### End Toolbar #########################################################
+    // ######################################################### End Top Toolbar ######################################################
 
     // Determine desired framebuffer pixel size (account for HiDPI scale)
     int desired_w = static_cast<int>(window_width * io.DisplayFramebufferScale.x);
@@ -466,6 +483,114 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     
 	ImGui::EndMainMenuBar();
 }
+
+    void SpxWindow::ResourcesInspector(GLFWwindow* window)
+    {
+        ImGui::Begin("Resources Inspector");
+
+        if (ImGui::BeginTabBar("##Main", ImGuiTabBarFlags_None))
+        {
+            if (ImGui::BeginTabItem("Resource Lab"))
+            {
+                if (ImGui::CollapsingHeader(ICON_FA_EDIT" Texture Settings", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    // Add your texture settings UI elements here
+                    // And display all the textures that we can use
+                    ImGui::Text("Texture filtering, wrapping, etc. can go here.");
+                }
+                ImGui::EndTabItem();
+            }
+            auto flags = ImGuiTreeNodeFlags_DefaultOpen;
+            if (ImGui::BeginTabItem("Camera Lab"))
+            {
+                // Camera Main
+                ImGuiTreeNodeFlags nodeFlagsMain = flags | ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx("Camera Main", nodeFlagsMain);
+                if (ImGui::IsItemClicked()) {
+                    // Handle the selection of Camera Main
+                    std::cout << "Camera Main selected" << std::endl;
+                }
+                ImGui::TreePop();
+
+                // Camera Top
+                ImGuiTreeNodeFlags nodeFlagsTop = flags | ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx("Camera Top", nodeFlagsTop);
+                if (ImGui::IsItemClicked()) {
+                    // Handle the selection of Top Left
+                    std::cout << "Camera Top selected" << std::endl;
+                }
+                ImGui::TreePop();
+
+                // Camera Left
+                ImGuiTreeNodeFlags nodeFlagsLeft = flags | ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx("Camera Left", nodeFlagsLeft);
+                if (ImGui::IsItemClicked()) {
+                    // Handle the selection of Camera Left
+                    std::cout << "Camera Left selected" << std::endl;
+                }
+                ImGui::TreePop();
+
+                // Camera Right
+                ImGuiTreeNodeFlags nodeFlagsRight = flags | ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx("Camera Right", nodeFlagsRight);
+                if (ImGui::IsItemClicked()) {
+                    // Handle the selection of Camera Right
+                    std::cout << "Camera Right selected" << std::endl;
+                }
+                ImGui::TreePop();
+
+                if (ImGui::Button(ICON_FA_VIDEO " Reset Cam", ImVec2(70, 0))) {
+                    if (m_actionCallback) m_actionCallback("resetCameraPos");
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset camera position");
+                ImGui::SameLine();
+                // focus the camera on the selected object in the scene (if any)
+                if (ImGui::Button(ICON_FA_VIDEO " Focus Cam", ImVec2(70, 0))) {
+                    if (m_actionCallback) m_actionCallback("focusSelected");
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
+                //new
+                if (ImGui::Button(ICON_FA_VIDEO " Top Cam", ImVec2(70, 0))) {
+                    if (m_actionCallback) m_actionCallback("TopDownView");
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
+                ImGui::SameLine(); //new
+                if (ImGui::Button(ICON_FA_VIDEO " Back Cam", ImVec2(70, 0))) {
+                    if (m_actionCallback) m_actionCallback("PerspectiveView");
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
+                // PerspectiveView
+
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Render Lab"))
+            {
+                ImGui::Text("ID: Render Lab");
+                ImGui::Text("Spidex Engine New Render Lab", nullptr);
+
+                if (ImGui::Button("Render Image")) {
+                    std::cout << "Render The Image on a new form" << std::endl;
+                }
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Help Lab"))
+            {
+                ImGui::Text("Help doc's");
+                ImGui::Text("Spidex Engine New Help doc's", nullptr);
+				/*ImGui::InputTextMultiline("##help", m_helpBuffer, sizeof(m_helpBuffer), ImVec2(-FLT_MIN,
+                    ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);*/
+                
+                ImGui::EndTabItem();
+            }
+                
+
+
+            ImGui::EndTabItem();
+
+        }
+
+        ImGui::End();
+    }
 
 // Create or recreate the FBO using current window size if needed
 void SpxWindow::Creat_FrameBuffer()

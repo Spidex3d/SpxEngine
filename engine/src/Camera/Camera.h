@@ -32,8 +32,14 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    // Orthographic half-height (world units). Final ortho extents are OrthoSize * aspect horizontally.
+    float OrthoSize = 10.0f;  // 10.0f
+    float NearPlane = 0.1f;  // Default near clipping plane  
+    float FarPlane = 1000.0f; // Default far clipping plane 100
 
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f),
+	enum class ProjectionMode { Perspective = 0, Orthographic = 1 };  // ortho vs perspective mode
+
+    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f), //3
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
         float yaw = YAW, float pitch = PITCH);
 
@@ -43,6 +49,17 @@ public:
     void ProcessKeyboard(Camera_Movement direction, float deltaTime);
     void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
     void ProcessMouseScroll(float yoffset);
+	// ######################################################## Ortho # Helpers ########################################################
+    ProjectionMode Projection = ProjectionMode::Perspective;
+    void SetOrthographicTopDown(const glm::vec3& center, float orthoHalfHeight, float heightAbove = 25.0f);
+    void SetPerspectiveFromDefaults(); // optional helper to restore perspective defaults
+
+    // Reset camera potition
+    void SetPositionYawPitch(const glm::vec3& pos, float yaw, float pitch);
+    void ResetToDefaults(const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 3.0f),
+        float yaw = YAW, float pitch = PITCH);
+	// Focus the camera on a target point at a specified distance, maintaining current yaw and pitch
+    void FocusOn(const glm::vec3& target, float distance);
 
 private:
     void updateCameraVectors();

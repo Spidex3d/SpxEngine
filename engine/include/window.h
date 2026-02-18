@@ -53,6 +53,7 @@ public:
     // Main scene window + framebuffer helpers
     void MainSceneWindow(GLFWwindow* window); // drawing UI window that will display the FBO
 	void MainScreenMenu(GLFWwindow* window); // main glfw menu bar
+	void ResourcesInspector(GLFWwindow* window); // resource inspector window
     void Creat_FrameBuffer();                 // create or recreate the framebuffer using current size
     void Bind_Framebuffer();                  // bind the offscreen FBO for rendering
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
@@ -94,6 +95,7 @@ public:
     void* GetNativeWindow() const;
 
     std::string openFileDialog();
+
 
     
 private:

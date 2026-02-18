@@ -17,7 +17,7 @@
 #include "../include/asset_path.h"
 #include "../src/Input/EditorInput.h"
 #include <textures.h>
-
+#include "window.h"
 
 Engine::Engine() = default;
 Engine::~Engine() { Shutdown(); }
@@ -143,6 +143,75 @@ bool Engine::Initialize(const EngineConfig& config) {
             // place at center by default
             AddFloor(glm::vec3(0.0f, 0.0f, 0.0f));
         }
+        // new reset camera command
+        if (cmd == "resetCameraPos" || cmd == "ResetCameraPosition") {
+            // Choose your preferred default here:
+            glm::vec3 defaultPos(0.0f, 0.0f, 5.0f);
+            m_camera.ResetToDefaults(defaultPos, YAW, PITCH);
+
+            // Ensure EditorInput/other systems see the updated camera
+            if (m_input) {
+                m_input->SetCamera(&m_camera);
+                // reset input mouse tracking to avoid jumps
+                m_input->SetSceneHovered(false);
+            }
+            LOG_INFO("Engine: Camera reset to default position");
+        }
+        // inside the existing SetActionCallback lambda:
+        if (cmd == "focusSelected") {
+            if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                GameObj* sel = m_entities[m_selectedEntityIndex].get();
+                if (sel) {
+                    // world position of the object's origin
+                    glm::vec3 worldPos = glm::vec3(sel->modelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                    // choose a distance appropriate for your scene scale; 5.0f is a reasonable default
+                    float focusDistance = 5.0f;
+                    m_camera.FocusOn(worldPos, focusDistance);
+
+                    // ensure input uses the updated camera and avoid big mouse jumps
+                    if (m_input) {
+                        m_input->SetCamera(&m_camera);
+                        m_input->SetSceneHovered(false);
+                    }
+                    LOG_INFO("Engine: Focused camera on entity " << sel->entId);
+                }
+            }
+            else {
+                LOG_INFO("Engine: focusSelected called but no entity selected");
+            }
+        }
+
+		// new ortho/ perspective toggle command
+        // inside the SetActionCallback lambda:
+        if (cmd == "TopDownView") {
+            // Center on selected object if present, otherwise origin
+            glm::vec3 center(0.0f);
+            if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                GameObj* sel = m_entities[m_selectedEntityIndex].get();
+                if (sel) {
+                    center = glm::vec3(sel->modelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                }
+            }
+            float orthoHalfHeight = 10.0f; // tune based on scene scale
+            float heightAbove = 25.0f;     // camera altitude
+            m_camera.SetOrthographicTopDown(center, orthoHalfHeight, heightAbove);
+
+            if (m_input) {
+                m_input->SetCamera(&m_camera);
+                m_input->SetSceneHovered(false);
+            }
+            LOG_INFO("Engine: switched to TopDownView at " << center.x << "," << center.y << "," << center.z);
+        }
+        ImGui::SameLine();
+		    if (cmd == "PerspectiveView") {
+		    	m_camera.SetPerspectiveFromDefaults();
+		    	if (m_input) {
+		    		m_input->SetCamera(&m_camera);
+		    		m_input->SetSceneHovered(false);
+		    	}
+		    	LOG_INFO("Engine: switched to PerspectiveView");
+		    }
+
 	});
 
     m_running = true;
@@ -369,27 +438,99 @@ void Engine::Run() {
 			// ######################## End Main Object Explorer Window ####################
 
             // main rescorce window for Textuers, models, help doc's, lighting, Camera, ect
-			ImGui::Begin("Resources Inspector");
-			ImGui::Text("Texture Resources:");
+			//ImGui::Begin("Resources Inspector");
 
-            if (ImGui::CollapsingHeader(ICON_FA_EDIT" Texture Settings", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-				// Add your texture settings UI elements here
-                // And display all the textures that we can use
-				ImGui::Text("Texture filtering, wrapping, etc. can go here.");
-            }
+   //         if (ImGui::BeginTabBar("##Main", ImGuiTabBarFlags_None))
+   //         {
+   //             if (ImGui::BeginTabItem("Resource Lab"))
+   //             {
+   //                 if (ImGui::CollapsingHeader(ICON_FA_EDIT" Texture Settings", ImGuiTreeNodeFlags_DefaultOpen))
+   //                 {
+   //                     // Add your texture settings UI elements here
+   //                     // And display all the textures that we can use
+   //                     ImGui::Text("Texture filtering, wrapping, etc. can go here.");
+   //                 }
+   //                 ImGui::EndTabItem();
+   //             }
+   //             auto flags = ImGuiTreeNodeFlags_DefaultOpen;
+   //             if (ImGui::BeginTabItem("Camera Lab"))
+   //             {
+   //                 // Camera Main
+   //                 ImGuiTreeNodeFlags nodeFlagsMain = flags | ImGuiTreeNodeFlags_Leaf;
+   //                 ImGui::TreeNodeEx("Camera Main", nodeFlagsMain);
+   //                 if (ImGui::IsItemClicked()) {
+   //                     // Handle the selection of Camera Main
+   //                     std::cout << "Camera Main selected" << std::endl;
+   //                 }
+   //                 ImGui::TreePop();
 
-            
+   //                 // Camera Top
+   //                 ImGuiTreeNodeFlags nodeFlagsTop = flags | ImGuiTreeNodeFlags_Leaf;
+   //                 ImGui::TreeNodeEx("Camera Top", nodeFlagsTop);
+   //                 if (ImGui::IsItemClicked()) {
+   //                     // Handle the selection of Top Left
+   //                     std::cout << "Camera Top selected" << std::endl;
+   //                 }
+   //                 ImGui::TreePop();
 
-            
-			
+   //                 // Camera Left
+   //                 ImGuiTreeNodeFlags nodeFlagsLeft = flags | ImGuiTreeNodeFlags_Leaf;
+   //                 ImGui::TreeNodeEx("Camera Left", nodeFlagsLeft);
+   //                 if (ImGui::IsItemClicked()) {
+   //                     // Handle the selection of Camera Left
+   //                     std::cout << "Camera Left selected" << std::endl;
+   //                 }
+   //                 ImGui::TreePop();
 
-			ImGui::End();
+   //                 // Camera Right
+   //                 ImGuiTreeNodeFlags nodeFlagsRight = flags | ImGuiTreeNodeFlags_Leaf;
+   //                 ImGui::TreeNodeEx("Camera Right", nodeFlagsRight);
+   //                 if (ImGui::IsItemClicked()) {
+   //                     // Handle the selection of Camera Right
+   //                     std::cout << "Camera Right selected" << std::endl;
+   //                 }
+   //                 ImGui::TreePop();
+
+   //                 if (ImGui::Button(ICON_FA_VIDEO "##Reset Cam", ImVec2(30, 0))) {
+   //                     //if (m_actionCallback) m_actionCallback("resetCameraPos");
+   //                 }
+   //                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset camera position");
+   //                 ImGui::SameLine();
+   //                 // focus the camera on the selected object in the scene (if any)
+   //                 if (ImGui::Button(ICON_FA_VIDEO "##focus Cam", ImVec2(30, 0))) {
+   //                     //if (m_actionCallback) m_actionCallback("focusSelected");
+   //                 }
+   //                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
+
+   //                
+   //                 ImGui::EndTabItem();
+   //             }
+   //             if (ImGui::BeginTabItem("Render Lab"))
+   //             {
+   //                 ImGui::Text("ID: Render Lab");
+   //                 ImGui::Text("Spidex Engine New Render Lab", nullptr);
+
+   //                 if (ImGui::Button("Render Image")) {
+   //                     std::cout << "Render The Image on a new form" << std::endl;
+   //                 }
+   //                 ImGui::EndTabItem();
+   //             }
+   //             ImGui::Text("Texture Resources:");
+
+   //             
+   //             ImGui::EndTabItem();
+   //         }
+
+   //         
+			//
+
+			//ImGui::End();
 
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound
             window->MainSceneWindow(glfwwindow);
 			window->MainScreenMenu(glfwwindow);
+            window->ResourcesInspector(glfwwindow);
 
          // ##################################################### Picking ########################################################
 		 // ProcessViewportPick is in EditorInput and returns the picked entity index or -1 if none.

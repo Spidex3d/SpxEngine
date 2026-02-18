@@ -33,6 +33,63 @@ EditorInput::EditorInput(GLFWwindow* window)
 
 
 EditorInput::~EditorInput() = default;
+//new for Ortho
+void ScreenPosToWorldRay(const Camera* camera,
+    const ImVec2& mousePosScreen,
+    const ImVec2& viewportPos,
+    const ImVec2& viewportSize,
+    const ImVec2& fbScale,
+    glm::vec3& out_rayOrigin,
+    glm::vec3& out_rayDir)
+{
+    if (!camera) {
+        out_rayOrigin = glm::vec3(0.0f);
+        out_rayDir = glm::vec3(0.0f, -1.0f, 0.0f);
+        return;
+    }
+
+    // Convert ImGui screen pos -> framebuffer (pixel) coords relative to viewport
+    float mx = (mousePosScreen.x - viewportPos.x) * fbScale.x;
+    float my = (mousePosScreen.y - viewportPos.y) * fbScale.y;
+
+    // Normalize to [0..1]
+    float nx = mx / (viewportSize.x * fbScale.x);
+    float ny = my / (viewportSize.y * fbScale.y);
+
+    // Convert to NDC [-1..1] (note: y is flipped for NDC)
+    float ndcX = nx * 2.0f - 1.0f;
+    float ndcY = 1.0f - ny * 2.0f;
+
+    float aspect = (viewportSize.y > 0.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
+
+    glm::mat4 view = camera->GetViewMatrix();
+    glm::mat4 proj = camera->GetProjectionMatrix(aspect);
+
+    // For perspective: unproject near and far, build ray = normalize(far - near)
+    // For orthographic: unproject a point on near plane and set ray dir = camera->Front (parallel)
+    glm::vec4 ndcNear(ndcX, ndcY, -1.0f, 1.0f); // OpenGL NDC near = -1
+    glm::vec4 ndcFar(ndcX, ndcY, 1.0f, 1.0f); // far = +1
+
+    glm::mat4 invVP = glm::inverse(proj * view);
+
+    glm::vec4 worldNear = invVP * ndcNear; worldNear /= worldNear.w;
+    glm::vec4 worldFar = invVP * ndcFar;  worldFar /= worldFar.w;
+
+    glm::vec3 pNear = glm::vec3(worldNear);
+    glm::vec3 pFar = glm::vec3(worldFar);
+
+    if (camera->Projection == Camera::ProjectionMode::Perspective) { //made a change here
+        out_rayOrigin = pNear;
+        out_rayDir = glm::normalize(pFar - pNear);
+    }
+    else {
+        // Orthographic: rays are parallel; choose origin on near plane and dir = Front
+        out_rayOrigin = pNear;
+        out_rayDir = glm::normalize(camera->Front);
+    }
+}
+
+
 
 void EditorInput::SetSceneHovered(bool hovered) {
     m_sceneHovered = hovered;
@@ -163,40 +220,40 @@ static bool RayIntersectsAABB(const glm::vec3& orig, const glm::vec3& dir,
 }
 
 // Convert mouse + viewport -> world ray using glm::unProject
-static void ScreenPosToWorldRay(const Camera* camera,
-    const ImVec2& mousePosScreen,
-    const ImVec2& viewportPosScreen,
-    const ImVec2& viewportSizeScreen,
-    const ImVec2& fbScale,
-    glm::vec3& out_origin,
-    glm::vec3& out_dir)
-{
-    // Map mouse pos into viewport pixels
-    float mx = (mousePosScreen.x - viewportPosScreen.x) * fbScale.x;
-    float my = (mousePosScreen.y - viewportPosScreen.y) * fbScale.y;
-
-    float fbW = viewportSizeScreen.x * fbScale.x;
-    float fbH = viewportSizeScreen.y * fbScale.y;
-    if (fbW <= 0.0f || fbH <= 0.0f) {
-        out_origin = glm::vec3(0.0f);
-        out_dir = glm::vec3(0.0f, 0.0f, -1.0f);
-        return;
-    }
-
-    // OpenGL window coordinates: origin at bottom-left
-    float winX = mx;
-    float winY = fbH - my;
-    glm::vec4 viewportGL(0.0f, 0.0f, fbW, fbH);
-
-    glm::mat4 view = camera->GetViewMatrix();
-    glm::mat4 proj = camera->GetProjectionMatrix(fbW / fbH);
-
-    glm::vec3 nearP = glm::unProject(glm::vec3(winX, winY, 0.0f), view, proj, viewportGL);
-    glm::vec3 farP = glm::unProject(glm::vec3(winX, winY, 1.0f), view, proj, viewportGL);
-
-    out_origin = nearP;
-    out_dir = glm::normalize(farP - nearP);
-}
+//static void ScreenPosToWorldRay(const Camera* camera,
+//    const ImVec2& mousePosScreen,
+//    const ImVec2& viewportPosScreen,
+//    const ImVec2& viewportSizeScreen,
+//    const ImVec2& fbScale,
+//    glm::vec3& out_origin,
+//    glm::vec3& out_dir)
+//{
+//    // Map mouse pos into viewport pixels
+//    float mx = (mousePosScreen.x - viewportPosScreen.x) * fbScale.x;
+//    float my = (mousePosScreen.y - viewportPosScreen.y) * fbScale.y;
+//
+//    float fbW = viewportSizeScreen.x * fbScale.x;
+//    float fbH = viewportSizeScreen.y * fbScale.y;
+//    if (fbW <= 0.0f || fbH <= 0.0f) {
+//        out_origin = glm::vec3(0.0f);
+//        out_dir = glm::vec3(0.0f, 0.0f, -1.0f);
+//        return;
+//    }
+//
+//    // OpenGL window coordinates: origin at bottom-left
+//    float winX = mx;
+//    float winY = fbH - my;
+//    glm::vec4 viewportGL(0.0f, 0.0f, fbW, fbH);
+//
+//    glm::mat4 view = camera->GetViewMatrix();
+//    glm::mat4 proj = camera->GetProjectionMatrix(fbW / fbH);
+//
+//    glm::vec3 nearP = glm::unProject(glm::vec3(winX, winY, 0.0f), view, proj, viewportGL);
+//    glm::vec3 farP = glm::unProject(glm::vec3(winX, winY, 1.0f), view, proj, viewportGL);
+//
+//    out_origin = nearP;
+//    out_dir = glm::normalize(farP - nearP);
+//}
 
 // EditorInput::TryPick implementation
 // ############################################# Piking ############################################
