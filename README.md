@@ -36,5 +36,6 @@ glad
 ImGui 
 glm
 stb
-engine/assets/textures/ScreenShot
-![image_alt](https://github.com/Spidex3d/SpxEngine/blob/667f9b65b232bee6913376e70d5822aa68e92f32/engine/assets/textures/ScreenShot.jpg)
+✨ Editor 18/02/26
+![image_alt](https://github.com/Spidex3d/SpxEngine/blob/253dbaf6835af2a4f55523f77af1d4cd5e72559a/engine/assets/textures/ScreenShot/screenShot.jpg)
+
