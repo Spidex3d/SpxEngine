@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr const char* TEXTURE_PATH = "assets/textures/";
+constexpr const char* TEXTURE_PATH = "assets/textures/texture/";
 constexpr const char* SHADER_PATH = "Shaders/";
 
 
