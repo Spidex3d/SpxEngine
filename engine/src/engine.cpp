@@ -193,7 +193,7 @@ bool Engine::Initialize(const EngineConfig& config) {
                 }
             }
             float orthoHalfHeight = 10.0f; // tune based on scene scale
-            float heightAbove = 25.0f;     // camera altitude
+            float heightAbove = 15.0f;     // camera altitude 25.0
             m_camera.SetOrthographicTopDown(center, orthoHalfHeight, heightAbove);
 
             if (m_input) {

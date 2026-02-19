@@ -503,42 +503,21 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             auto flags = ImGuiTreeNodeFlags_DefaultOpen;
             if (ImGui::BeginTabItem("Camera Lab"))
             {
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+
+
+                ImGui::PushID("cam_Buttons");
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // normal
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f)); // hover
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
+                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f)); // active/click
+
+                ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
+                ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
                 // Camera Main
-                ImGuiTreeNodeFlags nodeFlagsMain = flags | ImGuiTreeNodeFlags_Leaf;
-                ImGui::TreeNodeEx("Camera Main", nodeFlagsMain);
-                if (ImGui::IsItemClicked()) {
-                    // Handle the selection of Camera Main
-                    std::cout << "Camera Main selected" << std::endl;
-                }
-                ImGui::TreePop();
-
-                // Camera Top
-                ImGuiTreeNodeFlags nodeFlagsTop = flags | ImGuiTreeNodeFlags_Leaf;
-                ImGui::TreeNodeEx("Camera Top", nodeFlagsTop);
-                if (ImGui::IsItemClicked()) {
-                    // Handle the selection of Top Left
-                    std::cout << "Camera Top selected" << std::endl;
-                }
-                ImGui::TreePop();
-
-                // Camera Left
-                ImGuiTreeNodeFlags nodeFlagsLeft = flags | ImGuiTreeNodeFlags_Leaf;
-                ImGui::TreeNodeEx("Camera Left", nodeFlagsLeft);
-                if (ImGui::IsItemClicked()) {
-                    // Handle the selection of Camera Left
-                    std::cout << "Camera Left selected" << std::endl;
-                }
-                ImGui::TreePop();
-
-                // Camera Right
-                ImGuiTreeNodeFlags nodeFlagsRight = flags | ImGuiTreeNodeFlags_Leaf;
-                ImGui::TreeNodeEx("Camera Right", nodeFlagsRight);
-                if (ImGui::IsItemClicked()) {
-                    // Handle the selection of Camera Right
-                    std::cout << "Camera Right selected" << std::endl;
-                }
-                ImGui::TreePop();
-
+                                                
                 if (ImGui::Button(ICON_FA_VIDEO " Reset Cam", ImVec2(70, 0))) {
                     if (m_actionCallback) m_actionCallback("resetCameraPos");
                 }
@@ -549,7 +528,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                     if (m_actionCallback) m_actionCallback("focusSelected");
                 }
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
-                //new
+                // Camera Top
                 if (ImGui::Button(ICON_FA_VIDEO " Top Cam", ImVec2(70, 0))) {
                     if (m_actionCallback) m_actionCallback("TopDownView");
                 }
@@ -561,25 +540,48 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
                 // PerspectiveView
 
+                ImGui::PopStyleVar(2);
+                ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
+                ImGui::PopID();
+               
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Render Lab"))
             {
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+
+
+                ImGui::PushID("cam_Buttons");
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // normal
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f)); // hover
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
+                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f)); // active/click
+
+                ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
+                ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
+
                 ImGui::Text("ID: Render Lab");
                 ImGui::Text("Spidex Engine New Render Lab", nullptr);
 
                 if (ImGui::Button("Render Image")) {
                     std::cout << "Render The Image on a new form" << std::endl;
                 }
+
+                ImGui::PopStyleVar(2);
+                ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
+                ImGui::PopID();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Help Lab"))
             {
                 ImGui::Text("Help doc's");
                 ImGui::Text("Spidex Engine New Help doc's", nullptr);
+                ImGui::Text("To reset Camera from topCam press back Cam then Reset Cam", nullptr);
 				/*ImGui::InputTextMultiline("##help", m_helpBuffer, sizeof(m_helpBuffer), ImVec2(-FLT_MIN,
-                    ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);*/
-                
+                    ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
+                */
                 ImGui::EndTabItem();
             }
                 

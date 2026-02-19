@@ -31,9 +31,6 @@ glm::mat4 Camera::GetProjectionMatrix(float aspectRatio) const {
         return glm::ortho(left, right, bottom, top, NearPlane, FarPlane);
     }
 
-
-
-
    // return glm::perspective(glm::radians(Zoom), aspectRatio, 0.1f, 100.0f);
 }
 
