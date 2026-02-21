@@ -8,7 +8,7 @@ int main() {
     EngineConfig cfg;
     cfg.windowConfig.width = 1280;
     cfg.windowConfig.height = 720;
-    cfg.windowConfig.title = "SPXEngine - Sandbox";
+    cfg.windowConfig.title = "SPXEngine 3d Editor";
     cfg.windowConfig.vsync = true;
 	cfg.enableImGui = true; // Enable ImGui for GUI rendering
 	cfg.enableDocking = true; // Enable docking in ImGui    

@@ -23,6 +23,19 @@
 
 Entity::Entity() {}
 Entity::~Entity() {}
+// helper function to set common shader uniforms for all entity types; called by each RenderX function before drawing
+
+void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& projection)
+{
+    shader->Use();
+    shader->SetUniformInt("myTexture", 0); // ensure sampler unit 0
+    shader->setVec3("u_albedo", glm::vec3(1.0f, 1.0f, 1.0f)); // fallback color
+    shader->setVec3("u_lightDir", glm::vec3(0.5f, 1.0f, 0.3f)); // optional
+    shader->setVec3("u_lightColor", glm::vec3(1.0f));
+    // end new
+    shader->setMat4("projection", projection);
+    shader->setMat4("view", view);
+}
 class objLoader; // forward declaration of objLoader, since Entity will create objLoader instances but doesn't need its full definition here
 
 void Entity::CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector,
@@ -83,29 +96,40 @@ void Entity::RenderObjModel(Shader* shader, const glm::mat4& view, const glm::ma
         LOG_WARNING("Entity::RenderObjModel called without shader; skipping draw.");
         return;
     }
-
-    shader->Use();
-    shader->SetUniformInt("myTexture", 0);
-    shader->setMat4("projection", projection);
-    shader->setMat4("view", view);
-
+	loadShader(shader, view, projection);
+    
     for (const auto& model : entVector) {
         if (!model) continue;
         if (!model->isVisible) continue;
 
         // objLoader derives from GameObj; render only those
         if (auto* objmodel = dynamic_cast<objLoader*>(model.get())) {
+            
+            // new
+            // texture usage: ask the loader whether it has a diffuse texture
+            bool hasTex = objmodel->HasDiffuseTexture();
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+            // end new
+
             shader->setMat4("model", objmodel->modelMatrix);
 
             int isSelected = (objmodel->entId == selectedEntityId) ? 1 : 0;
             shader->SetUniformInt("u_selected", isSelected);
             shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
 
+            if (hasTex) {
+                GLuint tex = objmodel->GetFirstDiffuseTexture();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, tex);
+            }
+
             // Let the loader draw its VAO and bind textures as implemented in objDrawModels()
             objmodel->objDrawModels();
 
             // Unbind textures (objDrawModels already does this), but keep shader state consistent
-            glBindTexture(GL_TEXTURE_2D, 0);
+            if (hasTex) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
         }
     }
 
@@ -170,52 +194,52 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
 void Entity::RenderCube(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
     std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& CubeObjIdx, int& selectedEntityId)
 {
-    // Ensure shader is available
     if (!shader) {
-        LOG_WARNING("Entity::RenderPlane called without shader; skipping draw.");
+        LOG_WARNING("Entity::RenderCube called without shader; skipping draw.");
         return;
     }
 
-    shader->Use();
-    shader->SetUniformInt("myTexture", 0);
-    shader->setMat4("projection", projection);
-    shader->setMat4("view", view);
+    // set shared uniforms once
+    loadShader(shader, view, projection);
 
-    // Render stored planes using their stored modelMatrix and persistent texture id
     for (const auto& model : entVector) {
         if (!model) continue;
-
-        // Skip invisible objects
         if (!model->isVisible) continue;
 
         if (auto* cube = dynamic_cast<CubeModel*>(model.get())) {
+            // per-object model matrix
             shader->setMat4("model", cube->modelMatrix);
 
-            // Set selection uniform: compare entity id
+            // selection highlight
             int isSelected = (cube->entId == selectedEntityId) ? 1 : 0;
             shader->SetUniformInt("u_selected", isSelected);
-            shader->setVec3("u_highlightColor", glm::vec3(0.2, 0.2f, 0.8f)); // orange-ish
+            shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
 
+            // Does this object have a texture?
+            bool hasTex = (cube->tex_ID != 0);
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
 
-
-            if (cube->tex_ID) {
+            if (hasTex) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, cube->tex_ID);
             }
             else {
-                glBindTexture(GL_TEXTURE_2D, 0);
+                // optionally give each object an albedo color (fallback)
+                // you can expose a per-object color in GameObj, for now use white
+                shader->setVec3("u_albedo", glm::vec3(1.0f, 1.0f, 1.0f));
             }
 
-            cube->DrawCube(); // assuming Draw() exists for CubeModel
+            cube->DrawCube();
 
-            if (cube->tex_ID) {
+            // cleanup: unbind only if we bound a texture
+            if (hasTex) {
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
         }
     }
+
     // reset selection uniform (optional)
     shader->SetUniformInt("u_selected", 0);
-    
 }
 
 void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
@@ -283,11 +307,7 @@ void Entity::RenderPlane(Shader* shader, const glm::mat4& view, const glm::mat4&
         return;
     }
 
-    shader->Use();
-    shader->SetUniformInt("myTexture", 0);
-   // shader->SetUniformInt("u_selected", 0); // initialize selection uniform
-    shader->setMat4("projection", projection);
-    shader->setMat4("view", view);
+	loadShader(shader, view, projection);
 
     // Render stored planes using their stored modelMatrix and persistent texture id
     for (const auto& model : entVector) {
@@ -305,14 +325,20 @@ void Entity::RenderPlane(Shader* shader, const glm::mat4& view, const glm::mat4&
             shader->SetUniformInt("u_selected", isSelected);
             shader->setVec3("u_highlightColor", glm::vec3(0.2, 0.2f, 0.8f)); // orange-ish
 
-            if (plane->tex_ID) {
+            // Does this object have a texture?
+            bool hasTex = (plane->tex_ID != 0);
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+            if (hasTex) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, plane->tex_ID);
             }
             else {
-                glBindTexture(GL_TEXTURE_2D, 0);
-            }
-
+                // optionally give each object an albedo color (fallback)
+                // you can expose a per-object color in GameObj, for now use white
+                shader->setVec3("u_albedo", glm::vec3(1.0f, 1.0f, 1.0f));
+			}   
+            
             plane->DrawPlane();
 
             if (plane->tex_ID) {
@@ -368,12 +394,8 @@ void Entity::RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4&
         return;
     }
 
-    shader->Use();
-    shader->SetUniformInt("myTexture", 0);
-    // shader->SetUniformInt("u_selected", 0); // initialize selection uniform
-    shader->setMat4("projection", projection);
-    shader->setMat4("view", view);
-
+	loadShader(shader, view, projection);
+    
     // Render stored planes using their stored modelMatrix and persistent texture id
     for (const auto& model : entVector) {
         if (!model) continue;
@@ -390,14 +412,20 @@ void Entity::RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4&
             shader->SetUniformInt("u_selected", isSelected);
             shader->setVec3("u_highlightColor", glm::vec3(0.2, 0.2f, 0.8f)); // orange-ish
 
-            if (floor->tex_ID) {
+            // Does this object have a texture?
+            bool hasTex = (floor->tex_ID != 0);
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+            if (hasTex) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, floor->tex_ID);
             }
             else {
-                glBindTexture(GL_TEXTURE_2D, 0);
-            }
-
+                // optionally give each object an albedo color (fallback)
+                // you can expose a per-object color in GameObj, for now use white
+                shader->setVec3("u_albedo", glm::vec3(1.0f, 1.0f, 1.0f));
+			}
+            
             floor->DrawFloorTerrain();
 
             if (floor->tex_ID) {
@@ -409,40 +437,6 @@ void Entity::RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4&
     shader->SetUniformInt("u_selected", 0);
 
 }
-
-//bool SetTextureForGameObj(GameObj* obj, const std::string& path) {
-//    if (!obj) return false;
-//
-//    if (!path.empty() && path == obj->texPath) {
-//        LOG_INFO("SetTextureForGameObj: path unchanged, tex_ID=" << obj->tex_ID);
-//        return true;
-//    }
-//
-//    if (!obj->texPath.empty()) {
-//        LOG_INFO("SetTextureForGameObj: unloading old path " << obj->texPath);
-//        TextureManager::Unload(obj->texPath);
-//        obj->texPath.clear();
-//    }
-//    else if (obj->tex_ID != 0) {
-//        LOG_INFO("SetTextureForGameObj: unloading old tex ID " << obj->tex_ID);
-//        TextureManager::Unload(obj->tex_ID);
-//    }
-//    obj->tex_ID = 0;
-//
-//    if (!path.empty()) {
-//        LOG_INFO("SetTextureForGameObj: loading " << path);
-//        GLuint tex = TextureManager::Load(path);
-//        if (tex == 0) {
-//            LOG_ERROR("SetTextureForGameObj: Failed to load " << path);
-//            return false;
-//        }
-//        obj->tex_ID = tex;
-//        obj->texPath = path;
-//        LOG_INFO("SetTextureForGameObj: loaded tex_ID=" << tex);
-//    }
-//
-//    return true;
-//}
 
 bool Entity::SetTextureForGameObj(GameObj* obj, const std::string& path)
 {

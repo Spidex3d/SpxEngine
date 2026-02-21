@@ -158,6 +158,7 @@
     <ClCompile Include="src\imgui_impl_glfw.cpp" />
     <ClCompile Include="src\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Input\EditorInput.cpp" />
+    <ClCompile Include="src\Model_loaders\gltf.cpp" />
     <ClCompile Include="src\Model_loaders\objLoader.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\textures.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="include\window.h" />
     <ClInclude Include="src\Camera\Camera.h" />
     <ClInclude Include="src\Input\EditorInput.h" />
+    <ClInclude Include="src\Model_loaders\gltf.h" />
     <ClInclude Include="src\Model_loaders\objLoader.h" />
     <ClInclude Include="src\Ui\icon_loader.h" />
     <ClInclude Include="vendors\imgui\imconfig.h" />
@@ -192,6 +194,7 @@
     <ClInclude Include="vendors\imgui\imstb_rectpack.h" />
     <ClInclude Include="vendors\imgui\imstb_textedit.h" />
     <ClInclude Include="vendors\imgui\imstb_truetype.h" />
+    <ClInclude Include="vendors\json\json.hpp" />
     <ClInclude Include="vendors\stb\stb_image.h" />
     <ClInclude Include="vendors\stb\stb_image2.h" />
   </ItemGroup>

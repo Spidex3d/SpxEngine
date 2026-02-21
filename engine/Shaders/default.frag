@@ -2,30 +2,80 @@
 
 in vec2 vTexCoord;
 in vec3 vNormal;
-// (frag pos isn't used here, remove if unused)
+in vec3 vFragPos;
 
 out vec4 FragColor;
 
-uniform sampler2D myTexture;
+uniform sampler2D myTexture;   // bound to texture unit 0 by engine
+uniform int u_useTexture;      // 1 = sample texture, 0 = use u_albedo
+uniform vec3 u_albedo;         // fallback color when no texture (rgb)
+uniform int u_selected;        // selection flag
+uniform vec3 u_highlightColor; // highlight color (rgb)
 
-// highlight uniforms
-uniform int u_selected;            // 1 = selected, 0 = not
-uniform vec3 u_highlightColor;     // highlight color (rgb)
+// Simple directional light (in world space)
+uniform vec3 u_lightDir = vec3(0.5, 1.0, 0.3); // can be overridden from CPU
+uniform vec3 u_lightColor = vec3(1.0);
+
+// simple material params
+const float kAmbient = 0.2;
+const float kDiffuse = 0.8;
 
 void main()
 {
-    // Use texture coordinates produced by the vertex shader
-    vec4 base = texture(myTexture, vTexCoord);
+    // choose base color (texture or fallback)
+    vec3 baseColor = u_albedo;
+    if (u_useTexture == 1) {
+        vec4 tex = texture(myTexture, vTexCoord);
+        baseColor = tex.rgb;
+    }
 
+    // lighting: simple Lambertian directional light
+    vec3 N = normalize(vNormal);
+    vec3 L = normalize(u_lightDir);
+    float NdotL = max(dot(N, L), 0.0);
+
+    vec3 lit = baseColor * (kAmbient + kDiffuse * NdotL) * u_lightColor;
+
+    // apply selection highlight (blend)
     if (u_selected == 1) {
-        // Blend highlight color into base color. Adjust factor to taste.
         float highlightMix = 0.35;
-        vec3 blended = mix(base.rgb, u_highlightColor, highlightMix);
-        FragColor = vec4(blended, base.a);
+        vec3 blended = mix(lit, u_highlightColor, highlightMix);
+        FragColor = vec4(blended, 1.0);
     } else {
-        FragColor = base;
+        FragColor = vec4(lit, 1.0);
     }
 }
+
+
+
+//#version 460 core
+//
+//in vec2 vTexCoord;
+//in vec3 vNormal;
+//// (frag pos isn't used here, remove if unused)
+//
+//out vec4 FragColor;
+//
+//uniform sampler2D myTexture;
+//
+//// highlight uniforms
+//uniform int u_selected;            // 1 = selected, 0 = not
+//uniform vec3 u_highlightColor;     // highlight color (rgb)
+//
+//void main()
+//{
+//    // Use texture coordinates produced by the vertex shader
+//    vec4 base = texture(myTexture, vTexCoord);
+//
+//    if (u_selected == 1) {
+//        // Blend highlight color into base color. Adjust factor to taste.
+//        float highlightMix = 0.35;
+//        vec3 blended = mix(base.rgb, u_highlightColor, highlightMix);
+//        FragColor = vec4(blended, base.a);
+//    } else {
+//        FragColor = base;
+//    }
+//}
 
 
 

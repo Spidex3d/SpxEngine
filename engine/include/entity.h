@@ -66,6 +66,8 @@ public:
     Entity();
     ~Entity();
 
+    void loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& projection);
+
     // Obj Model files
     void CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
         int& m_modelObjIdx, const std::string& modelPath, const glm::vec3& position = glm::vec3(0.0f));
