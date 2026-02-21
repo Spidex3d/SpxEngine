@@ -16,8 +16,11 @@
 #include "../include/shader.h"
 #include "../include/asset_path.h"
 #include "../src/Input/EditorInput.h"
-#include <textures.h>
-#include "window.h"
+#include "../src/Model_loaders/objLoader.h"
+//#include <textures.h>
+//#include "window.h"
+
+//class objLoader; // forward declaration of objLoader, since Engine will create objLoader instances but doesn't need its full definition here
 
 Engine::Engine() = default;
 Engine::~Engine() { Shutdown(); }
@@ -82,6 +85,7 @@ bool Engine::Initialize(const EngineConfig& config) {
     m_entity = std::make_unique<Entity>();
     m_entities.clear();
     m_currentEntityIndex = 0;
+    m_cubeObjIdx = 0;
 	m_cubeObjIdx = 0;
     m_planeObjIdx = 0;
 	m_floorObjIdx = 0;
@@ -122,15 +126,41 @@ bool Engine::Initialize(const EngineConfig& config) {
 
         if (m_entity) {
             // render cubes and planes (updated signatures with selectedEntityId)
+			m_entity->RenderObjModel(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
             m_entity->RenderCube(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
             m_entity->RenderPlane(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
             m_entity->RenderFloor(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
         }
+
     });
     
 
     // Register action callback (UI -> Engine) so clicking "Add Plane" invokes Engine::AddPlane
     window->SetActionCallback([this](const std::string& cmd) {
+        // Obj Models
+        if (cmd == "AddObj") {
+            // Open file dialog via the window (UI owned by SpxWindow)
+            std::string modelPath;
+            if (window) {
+                // need to work how to set file type
+                modelPath = window->openFileDialog();
+            }
+            if (!modelPath.empty()) {
+                if (m_entity) {
+                    // Create an object from the selected file and append to m_entities
+                    m_entity->CreateObjFromFile(m_entities, m_currentEntityIndex, m_modelObjIdx, modelPath, glm::vec3(0.0f));
+                    // select the newly added entity
+                    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                    ImGui::SetWindowFocus("Object Inspector");
+                    LOG_INFO("Engine: Added object from " << modelPath);
+                }
+            }
+            else {
+                LOG_INFO("Engine: AddObj cancelled or no file selected");
+            }
+        }
+
+
         if (cmd == "AddCube") {
             // place at center by default
             AddCube(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -211,6 +241,8 @@ bool Engine::Initialize(const EngineConfig& config) {
 		    	}
 		    	LOG_INFO("Engine: switched to PerspectiveView");
 		    }
+
+            
 
 	});
 
@@ -437,94 +469,7 @@ void Engine::Run() {
             }
 			// ######################## End Main Object Explorer Window ####################
 
-            // main rescorce window for Textuers, models, help doc's, lighting, Camera, ect
-			//ImGui::Begin("Resources Inspector");
-
-   //         if (ImGui::BeginTabBar("##Main", ImGuiTabBarFlags_None))
-   //         {
-   //             if (ImGui::BeginTabItem("Resource Lab"))
-   //             {
-   //                 if (ImGui::CollapsingHeader(ICON_FA_EDIT" Texture Settings", ImGuiTreeNodeFlags_DefaultOpen))
-   //                 {
-   //                     // Add your texture settings UI elements here
-   //                     // And display all the textures that we can use
-   //                     ImGui::Text("Texture filtering, wrapping, etc. can go here.");
-   //                 }
-   //                 ImGui::EndTabItem();
-   //             }
-   //             auto flags = ImGuiTreeNodeFlags_DefaultOpen;
-   //             if (ImGui::BeginTabItem("Camera Lab"))
-   //             {
-   //                 // Camera Main
-   //                 ImGuiTreeNodeFlags nodeFlagsMain = flags | ImGuiTreeNodeFlags_Leaf;
-   //                 ImGui::TreeNodeEx("Camera Main", nodeFlagsMain);
-   //                 if (ImGui::IsItemClicked()) {
-   //                     // Handle the selection of Camera Main
-   //                     std::cout << "Camera Main selected" << std::endl;
-   //                 }
-   //                 ImGui::TreePop();
-
-   //                 // Camera Top
-   //                 ImGuiTreeNodeFlags nodeFlagsTop = flags | ImGuiTreeNodeFlags_Leaf;
-   //                 ImGui::TreeNodeEx("Camera Top", nodeFlagsTop);
-   //                 if (ImGui::IsItemClicked()) {
-   //                     // Handle the selection of Top Left
-   //                     std::cout << "Camera Top selected" << std::endl;
-   //                 }
-   //                 ImGui::TreePop();
-
-   //                 // Camera Left
-   //                 ImGuiTreeNodeFlags nodeFlagsLeft = flags | ImGuiTreeNodeFlags_Leaf;
-   //                 ImGui::TreeNodeEx("Camera Left", nodeFlagsLeft);
-   //                 if (ImGui::IsItemClicked()) {
-   //                     // Handle the selection of Camera Left
-   //                     std::cout << "Camera Left selected" << std::endl;
-   //                 }
-   //                 ImGui::TreePop();
-
-   //                 // Camera Right
-   //                 ImGuiTreeNodeFlags nodeFlagsRight = flags | ImGuiTreeNodeFlags_Leaf;
-   //                 ImGui::TreeNodeEx("Camera Right", nodeFlagsRight);
-   //                 if (ImGui::IsItemClicked()) {
-   //                     // Handle the selection of Camera Right
-   //                     std::cout << "Camera Right selected" << std::endl;
-   //                 }
-   //                 ImGui::TreePop();
-
-   //                 if (ImGui::Button(ICON_FA_VIDEO "##Reset Cam", ImVec2(30, 0))) {
-   //                     //if (m_actionCallback) m_actionCallback("resetCameraPos");
-   //                 }
-   //                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset camera position");
-   //                 ImGui::SameLine();
-   //                 // focus the camera on the selected object in the scene (if any)
-   //                 if (ImGui::Button(ICON_FA_VIDEO "##focus Cam", ImVec2(30, 0))) {
-   //                     //if (m_actionCallback) m_actionCallback("focusSelected");
-   //                 }
-   //                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set camera to selected");
-
-   //                
-   //                 ImGui::EndTabItem();
-   //             }
-   //             if (ImGui::BeginTabItem("Render Lab"))
-   //             {
-   //                 ImGui::Text("ID: Render Lab");
-   //                 ImGui::Text("Spidex Engine New Render Lab", nullptr);
-
-   //                 if (ImGui::Button("Render Image")) {
-   //                     std::cout << "Render The Image on a new form" << std::endl;
-   //                 }
-   //                 ImGui::EndTabItem();
-   //             }
-   //             ImGui::Text("Texture Resources:");
-
-   //             
-   //             ImGui::EndTabItem();
-   //         }
-
-   //         
-			//
-
-			//ImGui::End();
+           
 
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound
@@ -601,6 +546,19 @@ void Engine::Shutdown() {
     m_running = false;
     LOG_INFO("Engine shutdown");
 }
+
+void Engine::AddObj(const std::string& modelPath, const glm::vec3& pos)
+{
+    if (!m_entity) return;
+    if (modelPath.empty()) return;
+
+    m_entity->CreateObjFromFile(m_entities, m_currentEntityIndex, m_modelObjIdx, modelPath, pos);
+
+    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+    ImGui::SetWindowFocus("Object Inspector");
+    LOG_INFO("Engine: Added object from file " << modelPath << " at pos (" << pos.x << "," << pos.y << "," << pos.z << ")");
+}
+
 // ######### This is where we add all the object to the game world #########
 void Engine::AddCube(const glm::vec3& pos)
 {

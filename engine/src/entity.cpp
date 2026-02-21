@@ -2,8 +2,11 @@
 #include "stb/stb_image.h"
 #include "../include/asset_path.h"
 #include "../include/log.h"
+
+#include <engine.h>
 #include "../include/textures.h"
 #include "../include/shader.h"
+#include "../src/Model_loaders/objLoader.h"
 #include <memory>
 
 // This is my games engine start date 01/01/2026
@@ -14,10 +17,101 @@
 // <It works.>
 // I Love Programing
 
+
+
 // Note: Entity no longer owns or creates shaders. It receives a Shader* from Engine when rendering.
 
 Entity::Entity() {}
 Entity::~Entity() {}
+class objLoader; // forward declaration of objLoader, since Entity will create objLoader instances but doesn't need its full definition here
+
+void Entity::CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector,
+    int& currentIndex, int& modelObjIdx, const std::string& modelPath, const glm::vec3& position)
+{
+    if (modelPath.empty()) {
+        LOG_WARNING("CreateObjFromFile: empty modelPath");
+        return;
+    }
+
+    LOG_INFO("CreateObjFromFile: loading " << modelPath);
+
+    stbi_set_flip_vertically_on_load(true);
+
+    // Derive a short name from the filename for the loader's name param
+    size_t p = modelPath.find_last_of("/\\");
+    std::string baseName = (p == std::string::npos) ? modelPath : modelPath.substr(p + 1);
+
+    // Construct loader (objLoader inherits GameObj)
+    auto loader = std::make_unique<objLoader>(currentIndex, baseName, modelObjIdx);
+
+    // Try to load the OBJ file
+    bool ok = loader->Loadobj(modelPath);
+    if (!ok) {
+        LOG_WARNING("CreateObjFromFile: objLoader failed to load " << modelPath << " - adding fallback cube");
+        // Fallback: create a CubeModel so something appears
+        auto fallback = std::make_unique<CubeModel>(currentIndex, baseName + "_fallback", modelObjIdx);
+        fallback->position = position;
+        fallback->modelMatrix = glm::translate(glm::mat4(1.0f), fallback->position);
+        fallback->modelMatrix = glm::scale(fallback->modelMatrix, fallback->scale);
+        entVector.push_back(std::move(fallback));
+        ++currentIndex;
+        ++modelObjIdx;
+        return;
+    }
+
+    // Prepare GPU buffers (VAO/VBO) from loaded vertex data
+    loader->objModels();
+
+    // Set transform and other properties
+    loader->position = position;
+    loader->scale = glm::vec3(1.0f);
+    loader->modelMatrix = glm::translate(glm::mat4(1.0f), loader->position);
+    loader->modelMatrix = glm::scale(loader->modelMatrix, loader->scale);
+
+    // If you want to set a texture path on the GameObj wrapper, use loader->texPath / loader->tex_ID accordingly.
+    // Push into the entity vector (Engine will own and render it)
+    entVector.push_back(std::move(loader));
+
+    ++currentIndex;
+    ++modelObjIdx;
+}
+
+void Entity::RenderObjModel(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& /*unused*/, int& selectedEntityId)
+{
+    if (!shader) {
+        LOG_WARNING("Entity::RenderObjModel called without shader; skipping draw.");
+        return;
+    }
+
+    shader->Use();
+    shader->SetUniformInt("myTexture", 0);
+    shader->setMat4("projection", projection);
+    shader->setMat4("view", view);
+
+    for (const auto& model : entVector) {
+        if (!model) continue;
+        if (!model->isVisible) continue;
+
+        // objLoader derives from GameObj; render only those
+        if (auto* objmodel = dynamic_cast<objLoader*>(model.get())) {
+            shader->setMat4("model", objmodel->modelMatrix);
+
+            int isSelected = (objmodel->entId == selectedEntityId) ? 1 : 0;
+            shader->SetUniformInt("u_selected", isSelected);
+            shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
+
+            // Let the loader draw its VAO and bind textures as implemented in objDrawModels()
+            objmodel->objDrawModels();
+
+            // Unbind textures (objDrawModels already does this), but keep shader state consistent
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+
+    shader->SetUniformInt("u_selected", 0);
+}
+
 
 void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
     int& CubeObjIdx, const glm::vec3& position)

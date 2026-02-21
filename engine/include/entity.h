@@ -7,13 +7,14 @@
 #include <vector>
 #include <memory>
 #include "../include/log.h"
+#include "window.h"
 #include "../include/globalVar.h"
 #include "../include/textures.h"
 
 // Forward-declare Shader to avoid including its header here
 class Shader;
-
 struct GameObj { // Any game object not player-related 
+
     virtual ~GameObj() = default; // make polymorphic for safe dynamic_cast
 
     GameObj()
@@ -64,6 +65,12 @@ class Entity // Give this more thought !!
 public:
     Entity();
     ~Entity();
+
+    // Obj Model files
+    void CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& m_modelObjIdx, const std::string& modelPath, const glm::vec3& position = glm::vec3(0.0f));
+    void RenderObjModel(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& m_modelObjIdx, int& selectedEntityId);
     // Create a new Cube and append to entVector (returns index of new plane via CubeObjIdx)
     void CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
         int& CubeObjIdx, const glm::vec3& position = glm::vec3(0.0f));

@@ -354,20 +354,29 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     
     if (ImGui::BeginPopup("RightClickMenu"))
     {
+        if (ImGui::BeginMenu("Add a new model")) {
+            if (ImGui::MenuItem("Obj Model")) {
+                // Request engine to add a Obj via action callback
+                if (m_actionCallback) m_actionCallback("AddObj");
+            }
+
+            if (ImGui::MenuItem("Gltf Model")) {
+                // Request engine to add a Gltf via action callback
+                if (m_actionCallback) m_actionCallback("AddGltf");
+            }
+            // other menu items...
+            ImGui::EndMenu();
+        }
         
         if (ImGui::BeginMenu("Add a new mesh")) {
             if (ImGui::MenuItem("Cube")) {
-
                 // Request engine to add a cube via action callback
-                if (m_actionCallback) m_actionCallback("AddCube");
-                				                
+                if (m_actionCallback) m_actionCallback("AddCube");               				                
             }
 
-            if (ImGui::MenuItem("Plane")) {
-                
+            if (ImGui::MenuItem("Plane")) {               
                 // Request engine to add a plane via action callback
-                if (m_actionCallback) m_actionCallback("AddPlane");
-                                
+                if (m_actionCallback) m_actionCallback("AddPlane");                               
             }
             // other menu items...
             ImGui::EndMenu();
@@ -382,6 +391,9 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 			
             if (ImGui::MenuItem("Add Floor")) {
                 if (m_actionCallback) m_actionCallback("AddFloor");
+            }
+            if (ImGui::MenuItem("Add Terrain")) {
+                if (m_actionCallback) m_actionCallback("AddTerrain");
             }
                 ImGui::EndMenu();
 		}
