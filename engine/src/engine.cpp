@@ -126,6 +126,7 @@ bool Engine::Initialize(const EngineConfig& config) {
 
         if (m_entity) {
             // render cubes and planes (updated signatures with selectedEntityId)
+			m_entity->RenderGltfModel(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
 			m_entity->RenderObjModel(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
             m_entity->RenderCube(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
             m_entity->RenderPlane(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
@@ -137,6 +138,28 @@ bool Engine::Initialize(const EngineConfig& config) {
 
     // Register action callback (UI -> Engine) so clicking "Add Plane" invokes Engine::AddPlane
     window->SetActionCallback([this](const std::string& cmd) {
+		// gltf Models
+        if (cmd == "AddGltf") {
+            // Open file dialog via the window (UI owned by SpxWindow)
+            std::string modelPath;
+            if (window) {
+                // need to work how to set file type
+                modelPath = window->openFileDialog();
+            }
+            if (!modelPath.empty()) {
+                if (m_entity) {
+                    // Create an object from the selected file and append to m_entities
+                    m_entity->CreateGltfFromFile(m_entities, m_currentEntityIndex, m_modelGltfIdx, modelPath, glm::vec3(0.0f));
+                    // select the newly added entity
+                    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                    ImGui::SetWindowFocus("Object Inspector");
+                    LOG_INFO("Engine: Added object from " << modelPath);
+                }
+            }
+            else {
+                LOG_INFO("Engine: AddGltf cancelled or no file selected");
+            }
+        }
         // Obj Models
         if (cmd == "AddObj") {
             // Open file dialog via the window (UI owned by SpxWindow)
@@ -546,6 +569,18 @@ void Engine::Shutdown() {
     m_running = false;
     LOG_INFO("Engine shutdown");
 }
+void Engine::AddGltf(const std::string& modelPath, const glm::vec3& pos)
+{
+    if (!m_entity) return;
+    if (modelPath.empty()) return;
+
+    m_entity->CreateObjFromFile(m_entities, m_currentEntityIndex, m_modelObjIdx, modelPath, pos);
+
+    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+    ImGui::SetWindowFocus("Object Inspector");
+    LOG_INFO("Engine: Added object from file " << modelPath << " at pos (" << pos.x << "," << pos.y << "," << pos.z << ")");
+}
+
 
 void Engine::AddObj(const std::string& modelPath, const glm::vec3& pos)
 {

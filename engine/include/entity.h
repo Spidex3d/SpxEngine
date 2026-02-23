@@ -10,6 +10,8 @@
 #include "window.h"
 #include "../include/globalVar.h"
 #include "../include/textures.h"
+#include "../include/shader.h"
+#include "../src/Camera/Camera.h"
 
 // Forward-declare Shader to avoid including its header here
 class Shader;
@@ -67,6 +69,11 @@ public:
     ~Entity();
 
     void loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& projection);
+	// Gltf Model files
+    void CreateGltfFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& modelGltfIdx, const std::string& modelPath, const glm::vec3& position = glm::vec3(0.0f));
+    void RenderGltfModel(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& m_modelGltfIdx, int& selectedEntityId);
 
     // Obj Model files
     void CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,

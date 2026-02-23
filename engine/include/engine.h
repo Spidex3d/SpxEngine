@@ -42,6 +42,7 @@ public:
     int GetSelectedEntityIndex() const { return m_selectedEntityIndex; }  // use for selecting entity in UI
     void SetSelectedEntityIndex(int idx) { m_selectedEntityIndex = idx; } // set from UI
 
+    void AddGltf(const std::string& modelPath, const glm::vec3& pos);
 	void AddObj(const std::string& modelPath, const glm::vec3& pos); // Add an obj model to the scene at the given position (default center)
 
     void AddCube(const glm::vec3& pos = glm::vec3(0.0f));
@@ -54,7 +55,7 @@ public:
     Camera& GetCamera() { return m_camera; }
 
     int m_modelObjIdx;  // obj files 
-    int m_modelGlTFIdx; // gltf files
+    int m_modelGltfIdx; // gltf files
 
 private:
     // All varibles with  leading m_ for member variables that I have looked at and understand what they do

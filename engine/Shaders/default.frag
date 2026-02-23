@@ -24,7 +24,7 @@ void main()
 {
     // choose base color (texture or fallback)
     vec3 baseColor = u_albedo;
-    if (u_useTexture == 1) {
+    if (u_useTexture == 1) { //0
         vec4 tex = texture(myTexture, vTexCoord);
         baseColor = tex.rgb;
     }

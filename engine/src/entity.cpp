@@ -7,6 +7,7 @@
 #include "../include/textures.h"
 #include "../include/shader.h"
 #include "../src/Model_loaders/objLoader.h"
+#include "../src/Model_loaders/gltf.h"
 #include <memory>
 
 // This is my games engine start date 01/01/2026
@@ -36,7 +37,145 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
     shader->setMat4("projection", projection);
     shader->setMat4("view", view);
 }
-class objLoader; // forward declaration of objLoader, since Entity will create objLoader instances but doesn't need its full definition here
+void Entity::CreateGltfFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+    int& m_modelGltfIdx, const std::string& modelPath, const glm::vec3& position)
+{
+    if (modelPath.empty()) {
+        LOG_WARNING("CreateGltfFromFile: empty modelPath");
+        return;
+    }
+
+    LOG_INFO("CreateGltfFromFile: loading " << modelPath);
+
+    // Derive a friendly base name for the object
+    size_t p = modelPath.find_last_of("/\\");
+    std::string baseName = (p == std::string::npos) ? modelPath : modelPath.substr(p + 1);
+
+    // Determine binary buffer path (for .gltf JSON files that reference a .bin)
+    std::string binPath;
+    std::string ext;
+    {
+        size_t dot = modelPath.find_last_of('.');
+        if (dot != std::string::npos) ext = modelPath.substr(dot);
+        for (auto& c : ext) c = (char)std::tolower((unsigned char)c);
+    }
+
+    if (ext == ".gltf") {
+        // Parse the JSON to find the first buffer uri if present
+        try {
+            std::ifstream f(modelPath);
+            if (f) {
+                json j = json::parse(std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>()));
+                if (j.contains("buffers") && j["buffers"].is_array() && !j["buffers"].empty()) {
+                    const auto& buf = j["buffers"][0];
+                    if (buf.contains("uri") && buf["uri"].is_string()) {
+                        std::string uri = buf["uri"].get<std::string>();
+                        // ignore data: URIs (embedded)
+                        if (!uri.rfind("data:", 0) == 0) {
+                            std::string baseDir = modelPath.substr(0, modelPath.find_last_of("/\\") + 1);
+                            binPath = baseDir + uri;
+                        }
+                    }
+                }
+            }
+        }
+        catch (const std::exception& e) {
+            LOG_WARNING("CreateGltfFromFile: failed parsing gltf JSON to find bin: " << e.what());
+            binPath.clear();
+        }
+    }
+    else if (ext == ".glb") {
+        // For now, pass empty binPath; your gltf::LoadGLTF may not support .glb parsing.
+        binPath = "";
+    }
+    else {
+        // Not a glTF; bail.
+        LOG_WARNING("CreateGltfFromFile: unsupported extension: " << ext);
+        return;
+    }
+
+    // Create loader instance (gltf derives from GameObj)
+    auto loader = std::make_unique<gltf>(currentIndex, baseName, m_modelGltfIdx);
+
+    // Try to load (LoadGLTF returns bool)
+    bool ok = loader->LoadGLTF(modelPath, binPath);
+    if (!ok || !loader->IsLoaded()) {
+        LOG_WARNING("CreateGltfFromFile: gltf loader failed for " << modelPath << " - adding fallback cube");
+
+        auto fallback = std::make_unique<CubeModel>(currentIndex, baseName + "_fallback", m_modelGltfIdx);
+        fallback->position = position;
+        fallback->modelMatrix = glm::translate(glm::mat4(1.0f), fallback->position);
+        fallback->modelMatrix = glm::scale(fallback->modelMatrix, fallback->scale);
+        entVector.push_back(std::move(fallback));
+        ++currentIndex;
+        ++m_modelGltfIdx;
+        return;
+    }
+
+    // Set transform on loader and push into engine entity vector
+    loader->position = position;
+    loader->scale = glm::vec3(1.0f);
+    loader->modelMatrix = glm::translate(glm::mat4(1.0f), loader->position);
+    loader->modelMatrix = glm::scale(loader->modelMatrix, loader->scale);
+
+    // IMPORTANT: LoadGLTF already created VAO/VBO/EBO & textures inside loader (LoadGLTFMesh).
+    // Push into the main entity list so Engine will render it.
+    entVector.push_back(std::move(loader));
+
+    ++currentIndex;
+    ++m_modelGltfIdx;
+}
+void Entity::RenderGltfModel(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& m_modelGltfIdx, int& selectedEntityId)
+{
+    if (!shader) {
+        LOG_WARNING("Entity::RenderGltfModel called without shader; skipping draw.");
+        return;
+    }
+
+    // Setup shared shader uniforms (projection/view etc.)
+    loadShader(shader, view, projection);
+
+    for (const auto& model : entVector) {
+        if (!model) continue;
+        if (!model->isVisible) continue;
+
+        if (auto* gltfModel = dynamic_cast<gltf*>(model.get())) {
+            // Model matrix
+            shader->setMat4("model", gltfModel->modelMatrix);
+
+            // Selection highlight
+            int isSelected = (gltfModel->entId == selectedEntityId) ? 1 : 0;
+            shader->SetUniformInt("u_selected", isSelected);
+            shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
+
+            // Decide whether the model has a baseColor / diffuse texture (simple heuristic)
+            bool hasTex = false;
+            for (const auto& sub : gltfModel->m_mesh.submeshes) {
+                // sub.textures is a map<string, GLuint> in your gltf::SubMesh
+                auto it = sub.textures.find("baseColor");
+                if (it != sub.textures.end() && it->second != 0) { hasTex = true; break; }
+            }
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+            // Set fallback albedo if no texture
+            if (!hasTex) {
+                shader->setVec3("u_albedo", glm::vec3(1.0f));
+            }
+
+            // Draw the glTF model (your gltf::DrawGltf binds textures and issues draw calls per-submesh)
+            gltfModel->DrawGltf();
+
+            // Optionally reset bound textures (DrawGltf unbinds textures itself, but to be safe)
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+
+    // reset selection uniform (optional)
+    shader->SetUniformInt("u_selected", 0);
+}
+
 
 void Entity::CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector,
     int& currentIndex, int& modelObjIdx, const std::string& modelPath, const glm::vec3& position)
