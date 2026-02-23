@@ -14,12 +14,38 @@
 #include <json/json.hpp>
 
 using json = nlohmann::json;
-
+// ###########################################################
+// This is a re-vamp of my old gltf loader which only loaded the mesh
+// this one loades mesh and textures, and is designed to be used as a GameObj in the spxengine's entity system.
+// It also has a DrawGltf method that binds textures and issues draw calls per submesh,
+// so it can be rendered by the engine's main render loop. The loader is basic and only supports a subset of glTF features
+// (e.g., no animations, no PBR extensions beyond baseColor/metallicRoughness),
+// but it should be enough to get you started with loading simple glTF models into your engine. We can expand it later as needed.
+// ###########################################################
 struct SubMesh {
+	// GPU objects for this primitive
+	GLuint vao = 0;
+	GLuint vbo = 0;
+	GLuint ebo = 0;
+
 	GLuint textureID = 0;
+	// textures (baseColor, normal, etc.)
+	std::map<std::string, GLuint> textures;
+	// index count for this submesh
 	size_t indexCount = 0;
-	std::map<std::string, GLuint> textures;  // e.g., "baseColor", "normal", etc.
+	// new material parameters:
+	glm::vec3 baseColorFactor = glm::vec3(1.0f);
+	float metallicFactor = 1.0f;
+	float roughnessFactor = 1.0f;
+
+	// spec-gloss extension (optional)
+	glm::vec3 specularFactor = glm::vec3(0.5f); // specular color (if provided)
+	float glossinessFactor = 0.5f; // 0..1 (if provided)
+
+	// derived convenience value for classic Blinn-Phong style shader:
+	float shininess = 20.0f; // default 32.0f; will be computed from roughness or glossiness
 };
+
 struct GLTFMesh {
 	std::vector<SubMesh> submeshes;
 };
@@ -27,9 +53,7 @@ struct GLTFMesh {
 class gltf : public GameObj {
 
 public:
-	GLuint gltfVAO = 0;
-	GLuint gltfVBO = 0;
-	GLuint gltfEBO = 0;
+	
 	GLTFMesh m_mesh;
 	bool m_Loaded = false;
 
@@ -58,13 +82,7 @@ public:
 	bool IsLoaded() const { return m_Loaded; }
 	
 private:
-	//GLuint gltfVAO = 0; // VAO for this submesh
-	//GLuint gltfVBO = 0; // VBO for vertex data (positions, normals, texcoords)
-	//GLuint gltfEBO = 0; // EBO for indices (if using indexed drawing)
-	//GLuint textureID = 0;
-	//size_t indexCount = 0;
-	//std::map<std::string, GLuint> textures;  // e.g., "baseColor", "normal", etc.
-
+	
 	int idx = 0;
 	std::string name;
 	int m_modelGltfIdx = 0;  // index provided by engine (for bookkeeping)Idx = 0;

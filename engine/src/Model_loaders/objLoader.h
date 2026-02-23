@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <cstring> // for std::memcpy used in VertexHash
 #include <unordered_map>
 
 #include <stb/stb_image.h>
@@ -58,7 +59,7 @@ public:
 
     // helpers
     GLuint LoadObjTexture(const std::string& filename);
-    void LoadMaterialTextures(Material& mat, const std::string& filename);
+    //void LoadMaterialTextures(Material& mat, const std::string& filename);
     bool IsLoaded() const { return m_Loaded; }
     const std::string& GetModelDirectory() const { return modelPathObj; }
 
@@ -71,6 +72,7 @@ private:
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 texCoords;
+        glm::vec3 tangent;
 
         bool operator==(Vertex const& o) const noexcept {
             return position == o.position && normal == o.normal && texCoords == o.texCoords;

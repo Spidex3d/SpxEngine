@@ -6,37 +6,48 @@ in vec3 vFragPos;
 
 out vec4 FragColor;
 
-uniform sampler2D myTexture;   // bound to texture unit 0 by engine
-uniform int u_useTexture;      // 1 = sample texture, 0 = use u_albedo
-uniform vec3 u_albedo;         // fallback color when no texture (rgb)
-uniform int u_selected;        // selection flag
-uniform vec3 u_highlightColor; // highlight color (rgb)
+uniform sampler2D myTexture;
+uniform int u_useTexture;
+uniform vec3 u_albedo;
+uniform int u_selected;
+uniform vec3 u_highlightColor;
 
-// Simple directional light (in world space)
-uniform vec3 u_lightDir = vec3(0.5, 1.0, 0.3); // can be overridden from CPU
+// NEW:
+uniform float u_shininess;     // specular exponent
+uniform vec3 u_specularColor;  // specular color (RGB)
+uniform vec3 u_viewPos;        // camera/world position
+
+uniform vec3 u_lightDir = vec3(0.5, 1.0, 0.3);
 uniform vec3 u_lightColor = vec3(1.0);
 
-// simple material params
 const float kAmbient = 0.2;
 const float kDiffuse = 0.8;
 
 void main()
 {
-    // choose base color (texture or fallback)
     vec3 baseColor = u_albedo;
-    if (u_useTexture == 1) { //0
+    if (u_useTexture == 1) {
         vec4 tex = texture(myTexture, vTexCoord);
         baseColor = tex.rgb;
     }
 
-    // lighting: simple Lambertian directional light
     vec3 N = normalize(vNormal);
     vec3 L = normalize(u_lightDir);
+    vec3 V = normalize(u_viewPos - vFragPos);
+
     float NdotL = max(dot(N, L), 0.0);
 
-    vec3 lit = baseColor * (kAmbient + kDiffuse * NdotL) * u_lightColor;
+    // diffuse
+    vec3 diffuse = baseColor * (kAmbient + kDiffuse * NdotL) * u_lightColor;
 
-    // apply selection highlight (blend)
+    // Blinn-Phong specular
+    vec3 H = normalize(L + V);
+    float NdotH = max(dot(N, H), 0.0);
+    float specFactor = pow(NdotH, u_shininess);
+    vec3 spec = u_specularColor * specFactor * u_lightColor;
+
+    vec3 lit = diffuse + spec;
+
     if (u_selected == 1) {
         float highlightMix = 0.35;
         vec3 blended = mix(lit, u_highlightColor, highlightMix);
@@ -46,6 +57,59 @@ void main()
     }
 }
 
+
+
+
+//#version 460 core
+
+//in vec2 vTexCoord;
+//in vec3 vNormal;
+//in vec3 vFragPos;
+//
+//out vec4 FragColor;
+//
+//uniform sampler2D myTexture;   // bound to texture unit 0 by engine
+//uniform int u_useTexture;      // 1 = sample texture, 0 = use u_albedo
+//uniform vec3 u_albedo;         // fallback color when no texture (rgb)
+//uniform int u_selected;        // selection flag
+//uniform vec3 u_highlightColor; // highlight color (rgb)
+//
+//
+//
+//// Simple directional light (in world space)
+//uniform vec3 u_lightDir = vec3(0.5, 1.0, 0.3); // can be overridden from CPU
+//uniform vec3 u_lightColor = vec3(1.0);
+//
+//// simple material params
+//const float kAmbient = 0.2;
+//const float kDiffuse = 0.8;
+//
+//void main()
+//{
+//    // choose base color (texture or fallback)
+//    vec3 baseColor = u_albedo;
+//    if (u_useTexture == 1) { //0
+//        vec4 tex = texture(myTexture, vTexCoord);
+//        baseColor = tex.rgb;
+//    }
+//
+//    // lighting: simple Lambertian directional light
+//    vec3 N = normalize(vNormal);
+//    vec3 L = normalize(u_lightDir);
+//    float NdotL = max(dot(N, L), 0.0);
+//
+//    vec3 lit = baseColor * (kAmbient + kDiffuse * NdotL) * u_lightColor;
+//
+//    // apply selection highlight (blend)
+//    if (u_selected == 1) {
+//        float highlightMix = 0.35;
+//        vec3 blended = mix(lit, u_highlightColor, highlightMix);
+//        FragColor = vec4(blended, 1.0);
+//    } else {
+//        FragColor = vec4(lit, 1.0);
+//    }
+//}
+//
 
 
 //#version 460 core

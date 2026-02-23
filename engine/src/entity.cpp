@@ -136,44 +136,121 @@ void Entity::RenderGltfModel(Shader* shader, const glm::mat4& view, const glm::m
     // Setup shared shader uniforms (projection/view etc.)
     loadShader(shader, view, projection);
 
+    // derive camera world position from view matrix: inverse(view) * (0,0,0,1)
+    glm::mat4 invView = glm::inverse(view);
+    glm::vec3 viewPos = glm::vec3(invView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    shader->setVec3("u_viewPos", viewPos);
+
     for (const auto& model : entVector) {
         if (!model) continue;
         if (!model->isVisible) continue;
 
         if (auto* gltfModel = dynamic_cast<gltf*>(model.get())) {
-            // Model matrix
+            // set model matrix (same for all submeshes)
             shader->setMat4("model", gltfModel->modelMatrix);
 
-            // Selection highlight
+            // selection highlight (per-model)
             int isSelected = (gltfModel->entId == selectedEntityId) ? 1 : 0;
             shader->SetUniformInt("u_selected", isSelected);
             shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
 
-            // Decide whether the model has a baseColor / diffuse texture (simple heuristic)
-            bool hasTex = false;
+            // For each submesh set per-material uniforms and draw
             for (const auto& sub : gltfModel->m_mesh.submeshes) {
-                // sub.textures is a map<string, GLuint> in your gltf::SubMesh
-                auto it = sub.textures.find("baseColor");
-                if (it != sub.textures.end() && it->second != 0) { hasTex = true; break; }
+                // baseColor texture presence?
+                bool hasTex = (sub.textures.find("baseColor") != sub.textures.end() && sub.textures.at("baseColor") != 0);
+                shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+                // set albedo (baseColorFactor) as fallback
+                shader->setVec3("u_albedo", sub.baseColorFactor);
+
+                // set shininess & specular color
+                // NOTE: use your Shader float setter if named differently
+                shader->SetUniformFloat("u_shininess", sub.shininess);
+                shader->setVec3("u_specularColor", sub.specularFactor);
+
+                // bind baseColor to texture unit 0 if present
+                if (hasTex) {
+                    GLuint tex = sub.textures.at("baseColor");
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, tex);
+                }
+
+               // bool hasTex = (sub.textures.find("baseColor") != sub.textures.end() && sub.textures.at("baseColor") != 0);
+                /*LOG_INFO("GLTF submesh: hasTex=" << hasTex
+                    << " baseColor=" << sub.baseColorFactor.r << "," << sub.baseColorFactor.g << "," << sub.baseColorFactor.b
+                    << " shininess=" << sub.shininess
+                    << " specular=" << sub.specularFactor.r << "," << sub.specularFactor.g << "," << sub.specularFactor.b
+                    << " indexCount=" << sub.indexCount
+                    << " texturesCount=" << sub.textures.size());*/
+
+                // draw submesh
+                if (sub.vao != 0 && sub.indexCount > 0) {
+                    glBindVertexArray(sub.vao);
+                    glDrawElements(GL_TRIANGLES, (GLsizei)sub.indexCount, GL_UNSIGNED_INT, 0);
+                    glBindVertexArray(0);
+                }
+
+                // unbind texture if bound
+                if (hasTex) {
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
             }
-            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
 
-            // Set fallback albedo if no texture
-            if (!hasTex) {
-                shader->setVec3("u_albedo", glm::vec3(1.0f));
-            }
-
-            // Draw the glTF model (your gltf::DrawGltf binds textures and issues draw calls per-submesh)
-            gltfModel->DrawGltf();
-
-            // Optionally reset bound textures (DrawGltf unbinds textures itself, but to be safe)
+            // reset active texture
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
 
     // reset selection uniform (optional)
     shader->SetUniformInt("u_selected", 0);
+
+
+    //if (!shader) {
+    //    LOG_WARNING("Entity::RenderGltfModel called without shader; skipping draw.");
+    //    return;
+    //}
+
+    //// Setup shared shader uniforms (projection/view etc.)
+    //loadShader(shader, view, projection);
+
+    //for (const auto& model : entVector) {
+    //    if (!model) continue;
+    //    if (!model->isVisible) continue;
+
+    //    if (auto* gltfModel = dynamic_cast<gltf*>(model.get())) {
+    //        // Model matrix
+    //        shader->setMat4("model", gltfModel->modelMatrix);
+
+    //        // Selection highlight
+    //        int isSelected = (gltfModel->entId == selectedEntityId) ? 1 : 0;
+    //        shader->SetUniformInt("u_selected", isSelected);
+    //        shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
+
+    //        // Decide whether the model has a baseColor / diffuse texture (simple heuristic)
+    //        bool hasTex = false;
+    //        for (const auto& sub : gltfModel->m_mesh.submeshes) {
+    //            // sub.textures is a map<string, GLuint> in your gltf::SubMesh
+    //            auto it = sub.textures.find("baseColor");
+    //            if (it != sub.textures.end() && it->second != 0) { hasTex = true; break; }
+    //        }
+    //        shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+    //        // Set fallback albedo if no texture
+    //        if (!hasTex) {
+    //            shader->setVec3("u_albedo", glm::vec3(1.0f));
+    //        }
+
+    //        // Draw the glTF model (your gltf::DrawGltf binds textures and issues draw calls per-submesh)
+    //        gltfModel->DrawGltf();
+
+    //        // Optionally reset bound textures (DrawGltf unbinds textures itself, but to be safe)
+    //        glActiveTexture(GL_TEXTURE0);
+    //        glBindTexture(GL_TEXTURE_2D, 0);
+    //    }
+    //}
+
+    //// reset selection uniform (optional)
+    //shader->SetUniformInt("u_selected", 0);
 }
 
 
