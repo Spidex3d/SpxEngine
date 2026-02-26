@@ -16,6 +16,7 @@
 #include "../include/engine.h" // for Engine and EngineConfig
 #include "../src/input/EditorInput.h" // Include the appropriate header file for EditorInput 
 #include "../src/Ui/icon_loader.h"
+#include "../src/Sky/skyBox.h"
 
 
 #include "log.h"
@@ -397,6 +398,17 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             }
                 ImGui::EndMenu();
 		}
+
+        if (ImGui::BeginMenu("Sky")) {
+
+            if (ImGui::MenuItem("Add Sky Box")) {
+                if (m_actionCallback) m_actionCallback("AddSkyBox");
+            }
+            if (ImGui::MenuItem("Add Sky Sphere ")) {
+               // if (m_actionCallback) m_actionCallback("AddSkySpere");
+            }
+            ImGui::EndMenu();
+        }
         
         if (ImGui::BeginMenu("Reset Camera")) {
             if (ImGui::MenuItem("Reset Camera Position")) {
@@ -498,7 +510,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
     void SpxWindow::ResourcesInspector(GLFWwindow* window)
     {
-        ImGui::Begin("Resources Inspector");
+        ImGui::Begin(ICON_FA_EDIT" Resources Inspector");
 
         if (ImGui::BeginTabBar("##Main", ImGuiTabBarFlags_None))
         {
@@ -529,7 +541,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
                 ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
                 // Camera Main
-                                                
+
                 if (ImGui::Button(ICON_FA_VIDEO " Reset Cam", ImVec2(70, 0))) {
                     if (m_actionCallback) m_actionCallback("resetCameraPos");
                 }
@@ -555,7 +567,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 ImGui::PopStyleVar(2);
                 ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
                 ImGui::PopID();
-               
+
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Render Lab"))
@@ -591,12 +603,12 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 ImGui::Text("Help doc's");
                 ImGui::Text("Spidex Engine New Help doc's", nullptr);
                 ImGui::Text("To reset Camera from topCam press back Cam then Reset Cam", nullptr);
-				/*ImGui::InputTextMultiline("##help", m_helpBuffer, sizeof(m_helpBuffer), ImVec2(-FLT_MIN,
+                /*ImGui::InputTextMultiline("##help", m_helpBuffer, sizeof(m_helpBuffer), ImVec2(-FLT_MIN,
                     ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
                 */
                 ImGui::EndTabItem();
             }
-                
+
 
 
             ImGui::EndTabItem();
@@ -605,6 +617,50 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
         ImGui::End();
     }
+    // Sky lighting  Particles ICON_FA_IMAGE
+	
+    void SpxWindow::EnvironmentExplorer(GLFWwindow* window)
+    {
+        // inside your Environment Inspector ImGui window
+        //static int selectedSkyIndex = -1;
+        //const int cols = 3;
+        //const ImVec2 previewSize(64, 64);
+        //
+        //ImGui::Text("Available Skies:");
+        //for (int i = 0; i < (int)skyList.size(); ++i) {
+        //    if (i > 0 && (i % cols) != 0) ImGui::SameLine();
+
+        //    const SkyTexture& st = skyList[i];
+        //    // show as a clickable image button
+        //    ImGui::PushID(i);
+        //    if (ImGui::ImageButton((void*)(intptr_t)st.frontFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0), 1)) {
+        //        // On click: set active sky
+        //        if (activeSky) {
+        //            // Option A: call LoadFromFolder with st.path if path is a folder (or adapt)
+        //            activeSky->LoadFromFolder(st.path);
+        //            // Or Option B: use a setter if you implemented one
+        //            // activeSky->SetCubemap(st.cubemapID, st.frontFaceTexID);
+        //        }
+        //        else {
+        //            // Or create a new sky and add it to entities
+        //            m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, st.path, glm::vec3(0.0f));
+        //        }
+        //        selectedSkyIndex = i;
+        //    }
+        //    // draw a thin highlight/label under the preview
+        //    if (selectedSkyIndex == i) {
+        //        ImGui::SameLine();
+        //        ImGui::TextColored(ImVec4(0.2f, 0.6f, 0.9f, 1.0f), "Selected");
+        //    }
+        //    else {
+        //        ImGui::SameLine();
+        //        ImGui::Text("%s", std::filesystem::path(st.path).filename().string().c_str());
+        //    }
+        //    ImGui::PopID();
+        //}
+    }
+
+    
 
 // Create or recreate the FBO using current window size if needed
 void SpxWindow::Creat_FrameBuffer()

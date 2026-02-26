@@ -12,6 +12,7 @@
 class Shader;
 
 #include "entity.h" // Engine will own the Entity and the entity vector
+#include "../src/Sky/skyBox.h"
 #include <glm/gtc/matrix_inverse.hpp> // optional, glm::inverse already available via gtc/matrix_transform if included
 
 
@@ -51,6 +52,10 @@ public:
 	// Add a floor to the scene at the given position (default center)
 	void AddFloor(const glm::vec3& pos = glm::vec3(0.0f));
 
+	void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
+    
+    
+
     // Access camera
     Camera& GetCamera() { return m_camera; }
 
@@ -72,11 +77,18 @@ private:
     int m_planeObjIdx; // 0 plane object index
     int m_cubeObjIdx;  // 0 cube object index
 	int m_floorObjIdx; //0 floor object index
+	int m_skyIdx;      // 0 skybox index
 
     int m_selectedEntityIndex = -1; // -1 = none selected
 
     // Engine-owned shader for plane rendering
-    std::unique_ptr<Shader> m_planeShader;
+    Shader* m_planeShader = nullptr;
+    Shader* m_skyShader = nullptr;
+
+	// ################################### Skybox management new
+    //std::vector<SkyTexture> m_skyList;
+    //int m_activeSkyIndex = -1; // -1 = none
+
     // Engine-owned camera (new)
     Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
 

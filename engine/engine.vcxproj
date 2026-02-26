@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Shaders\ShaderManager.cpp" />
     <ClCompile Include="src\asset_path.cpp" />
     <ClCompile Include="src\Camera\Camera.cpp" />
     <ClCompile Include="src\engine.cpp" />
@@ -161,6 +162,7 @@
     <ClCompile Include="src\Model_loaders\gltf.cpp" />
     <ClCompile Include="src\Model_loaders\objLoader.cpp" />
     <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\Sky\skyBox.cpp" />
     <ClCompile Include="src\textures.cpp" />
     <ClCompile Include="src\Ui\icon_loader.cpp" />
     <ClCompile Include="src\window.cpp" />
@@ -179,10 +181,12 @@
     <ClInclude Include="include\shader.h" />
     <ClInclude Include="include\textures.h" />
     <ClInclude Include="include\window.h" />
+    <ClInclude Include="Shaders\ShaderManager.h" />
     <ClInclude Include="src\Camera\Camera.h" />
     <ClInclude Include="src\Input\EditorInput.h" />
     <ClInclude Include="src\Model_loaders\gltf.h" />
     <ClInclude Include="src\Model_loaders\objLoader.h" />
+    <ClInclude Include="src\Sky\skyBox.h" />
     <ClInclude Include="src\Ui\icon_loader.h" />
     <ClInclude Include="vendors\imgui\imconfig.h" />
     <ClInclude Include="vendors\imgui\imgui.h" />
@@ -211,6 +215,8 @@
   <ItemGroup>
     <None Include="Shaders\default.frag" />
     <None Include="Shaders\default.vert" />
+    <None Include="Shaders\sky.frag" />
+    <None Include="Shaders\sky.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

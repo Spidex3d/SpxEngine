@@ -27,7 +27,6 @@ struct SubMesh {
 	GLuint vao = 0;
 	GLuint vbo = 0;
 	GLuint ebo = 0;
-
 	GLuint textureID = 0;
 	// textures (baseColor, normal, etc.)
 	std::map<std::string, GLuint> textures;
@@ -37,7 +36,6 @@ struct SubMesh {
 	glm::vec3 baseColorFactor = glm::vec3(1.0f);
 	float metallicFactor = 1.0f;
 	float roughnessFactor = 1.0f;
-
 	// spec-gloss extension (optional)
 	glm::vec3 specularFactor = glm::vec3(0.5f); // specular color (if provided)
 	float glossinessFactor = 0.5f; // 0..1 (if provided)

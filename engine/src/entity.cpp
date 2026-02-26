@@ -8,6 +8,7 @@
 #include "../include/shader.h"
 #include "../src/Model_loaders/objLoader.h"
 #include "../src/Model_loaders/gltf.h"
+#include "../src/Sky/skyBox.h"
 #include <memory>
 
 // This is my games engine start date 01/01/2026
@@ -37,6 +38,68 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
     shader->setMat4("projection", projection);
     shader->setMat4("view", view);
 }
+
+// construct a skybox entity from a file path (for now, we can just set up the cube geometry and load a cubemap texture;
+// the actual shader and rendering will be handled in RenderSkyBox)
+
+void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+    int& skyObjIdx, const std::string& folderPath, const glm::vec3& position)
+{
+    if (folderPath.empty()) {
+        LOG_WARNING("CreateSkyBox: empty folderPath");
+        return;
+    }
+
+    std::string name = "Skybox_" + std::to_string(skyObjIdx);
+    auto sky = std::make_unique<LoadSkybox>(currentIndex, name, skyObjIdx);
+
+    // create geometry
+    sky->SkyBox();
+
+    // load cubemap images from folder (expects 1 or more matched images)
+    if (!sky->LoadFromFolder(folderPath)) {
+        LOG_WARNING("CreateSkyBox: failed to load textures from " << folderPath);
+        // still can push sky (empty) if you want; here we abort
+        return;
+    }
+
+    // set transform
+    sky->position = position;
+    sky->modelMatrix = glm::translate(glm::mat4(1.0f), sky->position);
+    sky->modelMatrix = glm::scale(sky->modelMatrix, sky->scale);
+
+    entVector.push_back(std::move(sky));
+    ++currentIndex;
+    ++skyObjIdx;
+    LOG_INFO("CreateSkyBox: added skybox from " << folderPath);
+}
+// add a sky to the scene
+void Entity::RenderSkyBox(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& m_SkyIdx, int& selectedEntityId)
+{
+	// Render the sky box with the given shader, view, and projection matrices.
+    // The skybox should ignore the camera's translation to always appear at the same position relative to the camera.
+    if (!shader) {
+        LOG_WARNING("Entity::RenderSkyBox called without shader; skipping draw.");
+        return;
+    }
+
+    // Use the shader (should be the skybox shader)
+    shader->Use();
+
+    // Render all skybox GameObjs (there will usually be one)
+    for (const auto& model : entVector) {
+        if (!model) continue;
+        if (!model->isVisible) continue;
+
+        if (auto* sky = dynamic_cast<LoadSkybox*>(model.get())) {
+            // SkyBox::DrawSkyBox sets view/projection/uniforms and binds cubemap
+            sky->DrawSkyBox(shader, view, projection);
+        }
+    }
+
+}
+
 void Entity::CreateGltfFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
     int& m_modelGltfIdx, const std::string& modelPath, const glm::vec3& position)
 {

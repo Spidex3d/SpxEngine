@@ -75,6 +75,12 @@
     <ClCompile Include="src\Model_loaders\gltf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Sky\skyBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shaders\ShaderManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h">
@@ -155,6 +161,12 @@
     <ClInclude Include="vendors\json\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Sky\skyBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\ShaderManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\engine.lib" />
@@ -173,5 +185,7 @@
   <ItemGroup>
     <None Include="Shaders\default.frag" />
     <None Include="Shaders\default.vert" />
+    <None Include="Shaders\sky.frag" />
+    <None Include="Shaders\sky.vert" />
   </ItemGroup>
 </Project>

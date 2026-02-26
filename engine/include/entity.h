@@ -12,6 +12,7 @@
 #include "../include/textures.h"
 #include "../include/shader.h"
 #include "../src/Camera/Camera.h"
+//#include "../src/Sky/skyBox.h"
 
 // Forward-declare Shader to avoid including its header here
 class Shader;
@@ -69,9 +70,21 @@ public:
     ~Entity();
 
     void loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& projection);
+	// Sky Box - System functions could offer different types of skyboxes in the future,
+    // for now it just loads a single one from file and renders it with a basic shader, but we can expand it later as needed.
+    // ############################   SKY BOX     #######################################
+    // in src/entity.h (public)
+    void CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& skyObjIdx, const std::string& folderPath, const glm::vec3& position = glm::vec3(0.0f));
+
+
+    
+    void RenderSkyBox(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& skyIdx, int& selectedEntityId);
+
 	// Gltf Model files
     void CreateGltfFromFile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
-        int& modelGltfIdx, const std::string& modelPath, const glm::vec3& position = glm::vec3(0.0f));
+        int& m_modelGltfIdx, const std::string& modelPath, const glm::vec3& position = glm::vec3(0.0f));
     void RenderGltfModel(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& m_modelGltfIdx, int& selectedEntityId);
 

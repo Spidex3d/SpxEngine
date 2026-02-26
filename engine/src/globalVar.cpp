@@ -16,6 +16,10 @@ const int OBJ_TRIANGEL = 11;
 const int OBJ_OBJ_MODEL = 15; // generic OBJ model loaded from file.
 const int GLTF_OBJ_MODEL = 16; // generic GLTF model loaded from file.
 
+const int SKY_OBJ = 30; // for skybox
+//const int SKYA_OBJ = 31; // reserved for special skybox objects
+//const int SKYB_OBJ = 32; // reserved for skybox PBR version with multiple textures (albedo, normal, roughness etc)
+
 std::string modelPathObj = "";
 
 

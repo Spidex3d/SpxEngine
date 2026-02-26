@@ -17,8 +17,8 @@
 #include "../include/asset_path.h"
 #include "../src/Input/EditorInput.h"
 #include "../src/Model_loaders/objLoader.h"
-//#include <textures.h>
-//#include "window.h"
+#include "../Shaders/ShaderManager.h"
+#include <filesystem>
 
 //class objLoader; // forward declaration of objLoader, since Engine will create objLoader instances but doesn't need its full definition here
 
@@ -34,6 +34,7 @@ bool Engine::Initialize(const EngineConfig& config) {
         window.reset();
         return false;
     }
+        
 
     void* native = window->GetNativeWindow();
     if (!native) {
@@ -89,25 +90,30 @@ bool Engine::Initialize(const EngineConfig& config) {
 	m_cubeObjIdx = 0;
     m_planeObjIdx = 0;
 	m_floorObjIdx = 0;
+	m_skyIdx = 0;
 
-    // Create the plane shader once here (Engine owns it).
-    // Build full paths relative to assets using GetAssetPath.
-    std::string shaderDir = GetAssetPath("shaders/"); // adjust if you use a SHADER_PATH macro
-    std::string vertFile = shaderDir + "default.vert";
-    std::string fragFile = shaderDir + "default.frag";
 
-    // Try to construct shader; the Shader class should log compile/link errors if any.
-    m_planeShader = std::make_unique<Shader>(vertFile, fragFile);
+    std::string shaderDir = GetAssetPath("Shaders/");
+    ShaderManager::SetupShaders(shaderDir);
+
+    // reference the default shader (non-owning)
+    m_planeShader = ShaderManager::Default();
     if (!m_planeShader) {
-        LOG_WARNING("Failed to create plane shader");
+        LOG_WARNING("Engine: ShaderManager failed to provide default shader");
     }
     else {
-        LOG_INFO("Plane shader created: %s , %s", vertFile.c_str(), fragFile.c_str());
+        LOG_INFO("Engine: acquired default shader from ShaderManager");
+    }
+	// sky shader for skybox rendering
+    m_skyShader = ShaderManager::Sky();
+    if (!m_skyShader) {
+        LOG_WARNING("Engine: ShaderManager failed to provide default shader");
+    }
+    else {
+        LOG_INFO("Engine: acquired Sky shader from ShaderManager");
     }
 
-    // Register a render callback with the window so it can call into Engine while the FBO is bound.
-    // The callback computes a simple centered orthographic projection and calls Entity::RenderPlane.
-    
+        
     window->SetRenderCallback([this]() {
         int fbw = window->GetFramebufferWidth();
         int fbh = window->GetFramebufferHeight();
@@ -125,12 +131,16 @@ bool Engine::Initialize(const EngineConfig& config) {
         }
 
         if (m_entity) {
+            // Add a sky box
+            m_entity->RenderSkyBox(m_skyShader, view, projection, m_entities, m_currentEntityIndex, m_skyIdx, selectedEntityId);
             // render cubes and planes (updated signatures with selectedEntityId)
-			m_entity->RenderGltfModel(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
-			m_entity->RenderObjModel(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
-            m_entity->RenderCube(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
-            m_entity->RenderPlane(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
-            m_entity->RenderFloor(m_planeShader.get(), view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
+			m_entity->RenderGltfModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
+			m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
+            m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
+            m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
+            m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
+        
+        
         }
 
     });
@@ -180,6 +190,42 @@ bool Engine::Initialize(const EngineConfig& config) {
             }
             else {
                 LOG_INFO("Engine: AddObj cancelled or no file selected");
+            }
+        }
+
+        // inside Engine::SetActionCallback lambda
+        if (cmd == "AddSkyBox") {
+            std::string chosen;
+           // if (window) chosen = window->openFileDialog(); // returns file or folder path depending on implementation
+			// for testing, hardcode a path to a skybox folder in your assets (or anywhere)
+            if (window) chosen = ("C:\\Users\\marty\\Desktop\\Models\\Textures\\Skybox\\NewSky"); // returns file or folder path depending on implementation
+            // C:\Users\marty\Desktop\Models\Textures\Skybox
+            if (chosen.empty()) {
+                LOG_INFO("Engine: AddSkybox cancelled or no path selected");
+            }
+            else {
+                std::filesystem::path p(chosen);
+                std::string folderPath;
+                if (std::filesystem::is_directory(p)) {
+                    folderPath = chosen; // user selected a folder
+                }
+                else {
+                    // user selected a file: use its parent directory (or pass file if you add LoadFromFile)
+                    folderPath = p.parent_path().string();
+                }
+
+                if (!folderPath.empty()) {
+                    if (m_entity) {
+                        // call CreateSkyBox with folderPath
+                        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+                        m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                        ImGui::SetWindowFocus("Object Inspector");
+                        LOG_INFO("Engine: Added skybox from " << folderPath);
+                    }
+                }
+                else {
+                    LOG_WARNING("Engine: Could not determine folder for skybox from chosen path: " << chosen);
+                }
             }
         }
 
@@ -499,6 +545,7 @@ void Engine::Run() {
             window->MainSceneWindow(glfwwindow);
 			window->MainScreenMenu(glfwwindow);
             window->ResourcesInspector(glfwwindow);
+			window->EnvironmentExplorer(glfwwindow);
 
          // ##################################################### Picking ########################################################
 		 // ProcessViewportPick is in EditorInput and returns the picked entity index or -1 if none.
@@ -561,7 +608,7 @@ void Engine::Shutdown() {
     m_input.reset();
     m_entity.reset();
     m_entities.clear();
-    m_planeShader.reset();
+   // m_planeShader.reset();
     if (window) {
         window.reset();
     }
@@ -626,6 +673,24 @@ void Engine::AddFloor(const glm::vec3& pos)
 	m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
 	ImGui::SetWindowFocus("Object Inspector"); // this will need work for terrain
 }
+// ###################################### Skybox addition ######################################
+void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
+{
+    if (!m_entity) return;
+    if (folderPath.empty()) return;
+
+    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, pos);
+
+    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+    ImGui::SetWindowFocus("Object Inspector");
+    LOG_INFO("Engine: Added object from file " << folderPath << " at pos (" << pos.x << "," << pos.y << "," << pos.z << ")");
+}
+
+
+
+
+// ###################################### End Skybox addition ######################################
+
 
 static glm::vec3 ClampPointToAABB(const glm::vec3& p, const glm::vec3& minB, const glm::vec3& maxB) {
     return glm::vec3(

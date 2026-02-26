@@ -5,6 +5,7 @@
 #include <imgui\ImGuiAF.h>
 #include <imgui\imgui.h>
 #include <imgui\imgui_internal.h>
+//#include "engine.h"
 
 // Ensure GLFW doesn't include OpenGL headers (safe when glad is used to load GL)
 #ifndef GLFW_INCLUDE_NONE
@@ -32,6 +33,7 @@ public:
 
     
 
+
     explicit SpxWindow(const WindowConfig& config);
     ~SpxWindow();
 
@@ -54,6 +56,7 @@ public:
     void MainSceneWindow(GLFWwindow* window); // drawing UI window that will display the FBO
 	void MainScreenMenu(GLFWwindow* window); // main glfw menu bar
 	void ResourcesInspector(GLFWwindow* window); // resource inspector window
+	void EnvironmentExplorer(GLFWwindow* window); // environment explorer window Sky and lighting fog particals
     void Creat_FrameBuffer();                 // create or recreate the framebuffer using current size
     void Bind_Framebuffer();                  // bind the offscreen FBO for rendering
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
@@ -98,6 +101,7 @@ public:
 
 
     
+    
 private:
     // callback
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -107,7 +111,7 @@ private:
     WindowConfig m_config;
     ResizeCallback m_resizeCallback = nullptr;
 
-    //Engine* m_engine = nullptr; // add this
+   
 
     // Framebuffer resources for the main scene view
     GLuint m_fbo = 0;
