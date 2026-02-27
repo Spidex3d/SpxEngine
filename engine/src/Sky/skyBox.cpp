@@ -143,8 +143,8 @@ inline unsigned char* extract_face(const unsigned char* src, int srcWidth, int s
     return face;
 }
 
-
-inline std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folderPath) {
+std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& folderPath)
+{
     std::vector<SkyTexture> sky_textures;
 
     for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
@@ -223,7 +223,7 @@ inline std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folde
         sky_textures.push_back({ cubeMapID, imagePath, previewTexID });
     }
 
-    return sky_textures;
+	return sky_textures; // = 25 the number of sky textures found in the folder
 }
 
 

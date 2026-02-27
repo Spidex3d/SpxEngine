@@ -36,6 +36,8 @@ public:
 
     void SkyBox();
     void DrawSkyBox(Shader* shader, const glm::mat4& view, const glm::mat4& projection);
+
+    std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folderPath);
     
 
     // NEW: load cubemap images from a folder (expects a strip or layout compatible with extract_face)

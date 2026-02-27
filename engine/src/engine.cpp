@@ -206,6 +206,7 @@ bool Engine::Initialize(const EngineConfig& config) {
             else {
                 std::filesystem::path p(chosen);
                 std::string folderPath;
+                // std::filesystem::directory_iterator(folderPath)
                 if (std::filesystem::is_directory(p)) {
                     folderPath = chosen; // user selected a folder
                 }

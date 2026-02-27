@@ -50,7 +50,8 @@ void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int&
         return;
     }
 
-    std::string name = "Skybox_" + std::to_string(skyObjIdx);
+   // std::string name = "Skybox_" + std::to_string(skyObjIdx);
+    std::string name = "Skybox";
     auto sky = std::make_unique<LoadSkybox>(currentIndex, name, skyObjIdx);
 
     // create geometry
