@@ -75,10 +75,11 @@ public:
     // ############################   SKY BOX     #######################################
     // in src/entity.h (public)
     void CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& skyObjIdx, const std::string& folderPath, const std::string& skyFile, const glm::vec3& position = glm::vec3(0.0f));
+
+   /* void CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
         int& skyObjIdx, const std::string& folderPath, const glm::vec3& position = glm::vec3(0.0f));
-
-
-    
+    */
     void RenderSkyBox(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& skyIdx, int& selectedEntityId);
 

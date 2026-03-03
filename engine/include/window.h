@@ -5,7 +5,6 @@
 #include <imgui\ImGuiAF.h>
 #include <imgui\imgui.h>
 #include <imgui\imgui_internal.h>
-//#include "engine.h"
 
 // Ensure GLFW doesn't include OpenGL headers (safe when glad is used to load GL)
 #ifndef GLFW_INCLUDE_NONE
@@ -13,7 +12,6 @@
 #endif
 #include <GLFW/glfw3.h>
 
-// Make sure glEnable(GL_DEPTH_TEST) is set (you already do in engine) and glEnable(GL_CULL_FACE) if you want backface culling.
 
 struct WindowConfig {
     int width = 1280;
@@ -62,8 +60,7 @@ public:
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
     void Rescale_frambuffer(float width, float height); // recreate at given pixel size
 
-	// void MainObjectExplorerWindow(GLFWwindow* window); // object explorer window with right-click menu
-
+    
     // Render callback management
     void SetRenderCallback(RenderCallback cb);
     // Framebuffer info accessors (pixel size and color texture id)
@@ -111,7 +108,6 @@ private:
     WindowConfig m_config;
     ResizeCallback m_resizeCallback = nullptr;
 
-   
 
     // Framebuffer resources for the main scene view
     GLuint m_fbo = 0;

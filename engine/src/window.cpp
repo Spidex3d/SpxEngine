@@ -621,12 +621,17 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     }
     // Sky lighting  Particles ICON_FA_IMAGE
    
+    
+
+
     void SpxWindow::EnvironmentExplorer(GLFWwindow* window)
     {
 
         static std::vector<SkyTexture> cachedSkies;
         static bool cached = false;
         static std::string skyFolder = "C:/Users/marty/Desktop/Models/Textures/Skybox/NewSky"; // <--- change to your folder or use Browse
+        // temp
+		std::string testFile = "Cubemap_Sky_04.png";
         const int cols = 3;
         const ImVec2 previewSize(64, 64);
 
@@ -670,7 +675,8 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                     // Create a small temporary loader object to reuse your load function.
                     LoadSkybox tmpLoader(0, "tmp", 0);
                     try {
-                        cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder);
+                       cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder, testFile);
+                       // cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder);
                     }
                     catch (...) {
                         cachedSkies.clear();
@@ -693,18 +699,25 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                     // Use the preview texture (frontFaceTexID). If zero, show a placeholder button.
                     if (st.frontFaceTexID != 0) {
                         ImGui::ImageButton((void*)(intptr_t)st.frontFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0));
+                        
+                        if (m_actionCallback) m_actionCallback(std::string("AddSkyBox:") + st.path);   
+
                     }
                     else {
                         // Placeholder box
                         ImGui::Button("No Preview", previewSize);
+                        if (m_actionCallback) {
+                            m_actionCallback(std::string("AddSkyBox:") + st.path);
+                        }
+                        
                     }
 
                     // Label under preview (filename)
                     /*std::string filename = std::filesystem::path(st.path).filename().string();
                     ImGui::TextWrapped("%s", filename.c_str());*/
 
-                    ImGui::PopID();
 
+                    ImGui::PopID();
                     // layout: 3 columns
                     if ((idx % cols) != (cols - 1)) ImGui::SameLine();
                     ++idx;

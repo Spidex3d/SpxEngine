@@ -17,6 +17,7 @@
 #include "../include/asset_path.h"
 #include "../src/Input/EditorInput.h"
 #include "../src/Model_loaders/objLoader.h"
+#include "../src/Sky/skyBox.h"
 #include "../Shaders/ShaderManager.h"
 #include <filesystem>
 
@@ -143,11 +144,13 @@ bool Engine::Initialize(const EngineConfig& config) {
         
         }
 
+
     });
     
 
     // Register action callback (UI -> Engine) so clicking "Add Plane" invokes Engine::AddPlane
     window->SetActionCallback([this](const std::string& cmd) {
+       
 		// gltf Models
         if (cmd == "AddGltf") {
             // Open file dialog via the window (UI owned by SpxWindow)
@@ -206,6 +209,8 @@ bool Engine::Initialize(const EngineConfig& config) {
             else {
                 std::filesystem::path p(chosen);
                 std::string folderPath;
+                //test
+				std::string skyFile = "Cubemap_Sky_04.png"; // defalt sky file
                 // std::filesystem::directory_iterator(folderPath)
                 if (std::filesystem::is_directory(p)) {
                     folderPath = chosen; // user selected a folder
@@ -218,7 +223,9 @@ bool Engine::Initialize(const EngineConfig& config) {
                 if (!folderPath.empty()) {
                     if (m_entity) {
                         // call CreateSkyBox with folderPath
-                        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+                       // m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+                        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, skyFile, glm::vec3(0.0f));
+
                         m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
                         ImGui::SetWindowFocus("Object Inspector");
                         LOG_INFO("Engine: Added skybox from " << folderPath);
@@ -674,13 +681,16 @@ void Engine::AddFloor(const glm::vec3& pos)
 	m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
 	ImGui::SetWindowFocus("Object Inspector"); // this will need work for terrain
 }
+
+
+
 // ###################################### Skybox addition ######################################
-void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
+void Engine::AddSkyBox(const std::string& folderPath, const std::string& skyFile, const glm::vec3& pos)
 {
     if (!m_entity) return;
     if (folderPath.empty()) return;
 
-    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, pos);
+    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, skyFile, pos);
 
     m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
     ImGui::SetWindowFocus("Object Inspector");

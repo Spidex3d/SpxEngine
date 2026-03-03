@@ -42,8 +42,12 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
 // construct a skybox entity from a file path (for now, we can just set up the cube geometry and load a cubemap texture;
 // the actual shader and rendering will be handled in RenderSkyBox)
 
-void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
-    int& skyObjIdx, const std::string& folderPath, const glm::vec3& position)
+//void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+//    int& skyObjIdx, const std::string& folderPath, const glm::vec3& position)
+    void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& skyObjIdx, const std::string& folderPath, const std::string& skyFile, const glm::vec3& position)
+
+
 {
     if (folderPath.empty()) {
         LOG_WARNING("CreateSkyBox: empty folderPath");
@@ -58,7 +62,9 @@ void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int&
     sky->SkyBox();
 
     // load cubemap images from folder (expects 1 or more matched images)
-    if (!sky->LoadFromFolder(folderPath)) {
+    //if (!sky->LoadFromFolder(folderPath)) {
+    if (!sky->LoadFromFolder(folderPath, skyFile)) {
+    //if (!sky->LoadFromFolder(folderPath)) {
         LOG_WARNING("CreateSkyBox: failed to load textures from " << folderPath);
         // still can push sky (empty) if you want; here we abort
         return;

@@ -143,16 +143,22 @@ inline unsigned char* extract_face(const unsigned char* src, int srcWidth, int s
     return face;
 }
 
-std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& folderPath)
+//std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& folderPath)
+std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& folderPath, const std::string& skyFile)
 {
     std::vector<SkyTexture> sky_textures;
 
     for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+    
         if (!entry.is_regular_file()) continue;
         std::string ext = entry.path().extension().string();
         if (ext != ".png" && ext != ".jpg" && ext != ".bmp") continue;
 
-        std::string imagePath = entry.path().string();
+		std::string testFolderPath = folderPath + "/" + skyFile;
+
+
+        //std::string imagePath = entry.path().string();
+        std::string imagePath = testFolderPath.c_str();
         int width, height, channels;
         unsigned char* data = stbi_load(imagePath.c_str(), &width, &height, &channels, 0);
         if (!data) {
@@ -227,10 +233,11 @@ std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& 
 }
 
 
-bool LoadSkybox::LoadFromFolder(const std::string& folderPath)
+//bool LoadSkybox::LoadFromFolder(const std::string& folderPath)
+bool LoadSkybox::LoadFromFolder(const std::string& folderPath, const std::string& skyFile)
 {
     // use the helper you already wrote to create cube maps from files in the folder
-    auto sky_textures = loadSkyTextureFromFolder(folderPath);
+    auto sky_textures = loadSkyTextureFromFolder(folderPath, skyFile);
     if (sky_textures.empty()) {
         std::cerr << "LoadSkybox::LoadFromFolder: no sky textures found in " << folderPath << std::endl;
         return false;

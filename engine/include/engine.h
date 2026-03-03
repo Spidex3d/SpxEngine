@@ -51,8 +51,9 @@ public:
     void AddPlane(const glm::vec3& pos = glm::vec3(0.0f));
 	// Add a floor to the scene at the given position (default center)
 	void AddFloor(const glm::vec3& pos = glm::vec3(0.0f));
-
-	void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
+   
+	void AddSkyBox(const std::string& folderPath, const std::string& skyFile, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
+	//void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
     
     
 
@@ -86,8 +87,6 @@ private:
     Shader* m_skyShader = nullptr;
 
 	// ################################### Skybox management new
-    //std::vector<SkyTexture> m_skyList;
-    //int m_activeSkyIndex = -1; // -1 = none
 
     // Engine-owned camera (new)
     Camera m_camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
