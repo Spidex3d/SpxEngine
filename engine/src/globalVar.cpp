@@ -1,5 +1,9 @@
 #include "../include/globalVar.h"
 
+
+
+bool ShouldAddSkyBox = false;
+
 const int MAIN_GRID = 0; // this is for the editor grid
 const int OBJ_CUBE = 1;
 const int OBJ_PLANE = 2; // use ffor walls and stuff

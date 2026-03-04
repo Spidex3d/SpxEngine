@@ -37,13 +37,13 @@ public:
     void SkyBox();
     void DrawSkyBox(Shader* shader, const glm::mat4& view, const glm::mat4& projection);
 
-    //std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folderPath);
-    std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folderPath, const std::string& skyFile);
+    std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folderPath);
+   // std::vector<SkyTexture> loadSkyTextureFromFolder(const std::string& folderPath, const std::string& skyFile);
     
 
     // NEW: load cubemap images from a folder (expects a strip or layout compatible with extract_face)
-    // bool LoadFromFolder(const std::string& folderPath);
-    bool LoadFromFolder(const std::string& folderPath, const std::string& skyFile);
+     bool LoadFromFolder(const std::string& folderPath);
+    //bool LoadFromFolder(const std::string& folderPath, const std::string& skyFile);
 
     GLuint getTextureID() const { return sky_textureID; }
     GLuint getFrontFaceTextureID() const { return frontFaceTexID; }

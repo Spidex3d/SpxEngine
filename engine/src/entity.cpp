@@ -45,7 +45,7 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
 //void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
 //    int& skyObjIdx, const std::string& folderPath, const glm::vec3& position)
     void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
-        int& skyObjIdx, const std::string& folderPath, const std::string& skyFile, const glm::vec3& position)
+        int& skyObjIdx, const std::string& folderPath, const glm::vec3& position)
 
 
 {
@@ -63,7 +63,7 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
 
     // load cubemap images from folder (expects 1 or more matched images)
     //if (!sky->LoadFromFolder(folderPath)) {
-    if (!sky->LoadFromFolder(folderPath, skyFile)) {
+    if (!sky->LoadFromFolder(folderPath)) {
     //if (!sky->LoadFromFolder(folderPath)) {
         LOG_WARNING("CreateSkyBox: failed to load textures from " << folderPath);
         // still can push sky (empty) if you want; here we abort

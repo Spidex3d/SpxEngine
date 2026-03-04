@@ -627,128 +627,156 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     void SpxWindow::EnvironmentExplorer(GLFWwindow* window)
     {
 
-        static std::vector<SkyTexture> cachedSkies;
-        static bool cached = false;
-        static std::string skyFolder = "C:/Users/marty/Desktop/Models/Textures/Skybox/NewSky"; // <--- change to your folder or use Browse
-        // temp
-		std::string testFile = "Cubemap_Sky_04.png";
-        const int cols = 3;
-        const ImVec2 previewSize(64, 64);
+            //static std::vector<SkyTexture> cachedSkies;
+            static std::vector<SkyTexture> skyTexture;
+            static bool cached = false;
+            static std::string skyFolder = "C:/Users/marty/Desktop/Models/Textures/Skybox/NewSky/"; // <--- change to your folder or use Browse
+            
+            const ImVec2 previewSize(64, 64);
 
-        // Header / controls
-        ImGui::Begin(ICON_FA_EDIT " Environment Inspector");
+            // Header / controls
+            ImGui::Begin(ICON_FA_EDIT " Environment Inspector");
 
-        if (ImGui::BeginTabBar("##MainEnviro", ImGuiTabBarFlags_None))
-        {
+            if (ImGui::BeginTabBar("##MainEnviro", ImGuiTabBarFlags_None))
+            {
+
+                if (ImGui::BeginTabItem("Sky Lab"))
+                {
+
+                    ImGui::Text("Sky Lab");
+                    ImGui::Separator();
+
+                    // Controls: Browse + Reload
+                    if (ImGui::Button("Browse...")) {
+                        std::string picked = openFileDialog();
+                        if (!picked.empty()) {
+                            std::filesystem::path p(picked);
+                            if (std::filesystem::is_directory(p)) {
+                                skyFolder = p.string();
+                            }
+                            else {
+                                skyFolder = p.parent_path().string();
+                            }
+                            cached = false; // force reload
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Reload")) {
+                        cached = false;
+                    }
+                    ImGui::SameLine();
+                    ImGui::Text("Folder: %s", skyFolder.c_str());
+                    ImGui::Spacing();
+
+
                     
-            if (ImGui::BeginTabItem("Sky Lab"))
-            {
 
-                ImGui::Text("Sky Lab");
-                ImGui::Separator();
+                  if (ShouldAddSkyBox) {
+                        // Load once (or after Reload/Browse). Use a temporary LoadSkybox to call the helper.
+                        if (!cached) {
+                            //cachedSkies.clear();
+                            skyTexture.clear();
 
-                // Controls: Browse + Reload
-                if (ImGui::Button("Browse...")) {
-                    std::string picked = openFileDialog();
-                    if (!picked.empty()) {
-                        std::filesystem::path p(picked);
-                        if (std::filesystem::is_directory(p)) {
-                            skyFolder = p.string();
+                            // Create a small temporary loader object to reuse your load function.
+                            LoadSkybox tmpLoader(0, "tmp", 0);
+                            try {
+                                skyTexture = tmpLoader.loadSkyTextureFromFolder(skyFolder);
+
+                                // cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder);
+                            }
+                            catch (...) {
+                                //cachedSkies.clear();
+								skyTexture.clear();
+                            }
+                            cached = true;
                         }
-                        else {
-                            skyFolder = p.parent_path().string();
-                        }
-                        cached = false; // force reload
-                    }
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Reload")) {
-                    cached = false;
-                }
-                ImGui::SameLine();
-                ImGui::Text("Folder: %s", skyFolder.c_str());
-                ImGui::Spacing();
 
-                // Load once (or after Reload/Browse). Use a temporary LoadSkybox to call the helper.
-                if (!cached) {
-                    cachedSkies.clear();
-                    // Create a small temporary loader object to reuse your load function.
-                    LoadSkybox tmpLoader(0, "tmp", 0);
-                    try {
-                       cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder, testFile);
-                       // cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder);
-                    }
-                    catch (...) {
-                        cachedSkies.clear();
-                    }
-                    cached = true;
-                }
+                        // If nothing found, show message
+                       /* if (skyTexture.empty()) {
+                            ImGui::TextWrapped("No sky previews found in folder. Use Browse... to pick a file inside a sky folder or update the default path.");
+                            ImGui::End();
+                            return;
+                        }*/
 
-                // If nothing found, show message
-                if (cachedSkies.empty()) {
-                    ImGui::TextWrapped("No sky previews found in folder. Use Browse... to pick a file inside a sky folder or update the default path.");
-                    ImGui::End();
-                    return;
-                }
+                    
+                    // Grid display
+                      int columns = 3;
+                      int count = 0;
+                  
+                       //for (const auto& st : cachedSkies) {
+                       for (const auto& st : skyTexture) {
+                           ImGui::PushID(st.id);
+                       
+                           // Use the preview texture (frontFaceTexID). If zero, show a placeholder button.
+                           if (st.frontFaceTexID != 0) {
+                               ImGui::ImageButton((void*)(intptr_t)st.frontFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0));
+                       
+                               // if (m_actionCallback) m_actionCallback(std::string("AddSkyBox:") + st.path);
+                                
+							   // from here we need to go to CreatSkyBox in Engine to create the skybox and add it to the scene,
+                               // we can pass the path of the skybox folder as a parameter to the callback and then load the textures
+                               // again in Engine and create the skybox,
+                               // this way we can reuse the loading code and also ensure that the textures are loaded in the correct order
+                               // for the skybox creation
+							   if (ImGui::IsItemClicked()) {
+								   if (m_actionCallback) {
+									   m_actionCallback(std::string("AddSkyBox:") + st.path); // correct path to the skybox folder
+								   }
+							   }
+                           }
+                           else {
+                               // Placeholder box
+                               ImGui::Button("No Preview", previewSize);
+                               if (m_actionCallback) {
+                                   m_actionCallback(std::string("AddSkyBox:") + st.path);
+                               }
+                       
+                           }
+                       
+                           // Label under preview (filename)
+                           /*std::string filename = std::filesystem::path(st.path).filename().string();
+                           ImGui::TextWrapped("%s", filename.c_str());*/
+                       
+                       
+                           ImGui::PopID();
+                           // layout: 3 columns
+                           //if ((idx % cols) != (cols - 1)) ImGui::SameLine();
+                           if (++count % columns != 0) ImGui::SameLine();
+                           //++idx;
+                       }
+                       
+                  } // end if for add sky
+                       
 
-                // Grid display
-                int idx = 0;
-                for (const auto& st : cachedSkies) {
-                    ImGui::PushID(idx);
-
-                    // Use the preview texture (frontFaceTexID). If zero, show a placeholder button.
-                    if (st.frontFaceTexID != 0) {
-                        ImGui::ImageButton((void*)(intptr_t)st.frontFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0));
-                        
-                        if (m_actionCallback) m_actionCallback(std::string("AddSkyBox:") + st.path);   
-
-                    }
-                    else {
-                        // Placeholder box
-                        ImGui::Button("No Preview", previewSize);
-                        if (m_actionCallback) {
-                            m_actionCallback(std::string("AddSkyBox:") + st.path);
-                        }
-                        
-                    }
-
-                    // Label under preview (filename)
-                    /*std::string filename = std::filesystem::path(st.path).filename().string();
-                    ImGui::TextWrapped("%s", filename.c_str());*/
+                    ImGui::EndTabItem();
+				} // ######################################### End Sky Lab #########################################
 
 
-                    ImGui::PopID();
-                    // layout: 3 columns
-                    if ((idx % cols) != (cols - 1)) ImGui::SameLine();
-                    ++idx;
-                }
+                if (ImGui::BeginTabItem("Lighting Lab"))
+                {
+                    // TO DO Later
+                    // Dispaly types of lighting we can use (directional, point, spot, etc.) as image buttons
+
+
+                    ImGui::EndTabItem();
+                } // End Lighting Lab
+
+                if (ImGui::BeginTabItem("Particles Lab"))
+                {
+                    // TO DO Later
+                    // Dispaly types of lighting we can use (directional, point, spot, etc.) as image buttons
+
+
+                    ImGui::EndTabItem();
+                } // End Particles Lab
+
                 ImGui::EndTabItem();
-			} // End Sky Lab
 
-            if (ImGui::BeginTabItem("Lighting Lab"))
-            {
-                 // TO DO Later
-                 // Dispaly types of lighting we can use (directional, point, spot, etc.) as image buttons
-    
+            }
 
-              ImGui::EndTabItem();
-			} // End Lighting Lab
+            ImGui::End();
 
-            if (ImGui::BeginTabItem("Particles Lab"))
-            {
-                // TO DO Later
-                // Dispaly types of lighting we can use (directional, point, spot, etc.) as image buttons
-  
-
-                ImGui::EndTabItem();
-			} // End Particles Lab
-
-            ImGui::EndTabItem();
-
-        }
-
-        ImGui::End();
-
+        
     }
 
     

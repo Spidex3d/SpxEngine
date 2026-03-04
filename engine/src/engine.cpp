@@ -198,43 +198,9 @@ bool Engine::Initialize(const EngineConfig& config) {
 
         // inside Engine::SetActionCallback lambda
         if (cmd == "AddSkyBox") {
-            std::string chosen;
-           // if (window) chosen = window->openFileDialog(); // returns file or folder path depending on implementation
-			// for testing, hardcode a path to a skybox folder in your assets (or anywhere)
-            if (window) chosen = ("C:\\Users\\marty\\Desktop\\Models\\Textures\\Skybox\\NewSky"); // returns file or folder path depending on implementation
-            // C:\Users\marty\Desktop\Models\Textures\Skybox
-            if (chosen.empty()) {
-                LOG_INFO("Engine: AddSkybox cancelled or no path selected");
-            }
-            else {
-                std::filesystem::path p(chosen);
-                std::string folderPath;
-                //test
-				std::string skyFile = "Cubemap_Sky_04.png"; // defalt sky file
-                // std::filesystem::directory_iterator(folderPath)
-                if (std::filesystem::is_directory(p)) {
-                    folderPath = chosen; // user selected a folder
-                }
-                else {
-                    // user selected a file: use its parent directory (or pass file if you add LoadFromFile)
-                    folderPath = p.parent_path().string();
-                }
 
-                if (!folderPath.empty()) {
-                    if (m_entity) {
-                        // call CreateSkyBox with folderPath
-                       // m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
-                        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, skyFile, glm::vec3(0.0f));
-
-                        m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
-                        ImGui::SetWindowFocus("Object Inspector");
-                        LOG_INFO("Engine: Added skybox from " << folderPath);
-                    }
-                }
-                else {
-                    LOG_WARNING("Engine: Could not determine folder for skybox from chosen path: " << chosen);
-                }
-            }
+			ShouldAddSkyBox = true; // set a flag to trigger skybox addition
+   
         }
 
 
@@ -685,12 +651,12 @@ void Engine::AddFloor(const glm::vec3& pos)
 
 
 // ###################################### Skybox addition ######################################
-void Engine::AddSkyBox(const std::string& folderPath, const std::string& skyFile, const glm::vec3& pos)
+void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
 {
     if (!m_entity) return;
     if (folderPath.empty()) return;
 
-    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, skyFile, pos);
+    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, pos);
 
     m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
     ImGui::SetWindowFocus("Object Inspector");
