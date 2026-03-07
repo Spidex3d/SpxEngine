@@ -402,6 +402,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         if (ImGui::BeginMenu("Sky")) {
 
             if (ImGui::MenuItem("Add Sky Box")) {
+				ShouldAddSkyBox = true; // set a flag to trigger skybox addition
                 if (m_actionCallback) m_actionCallback("AddSkyBox");
             }
             if (ImGui::MenuItem("Add Sky Sphere ")) {
@@ -627,12 +628,12 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     void SpxWindow::EnvironmentExplorer(GLFWwindow* window)
     {
 
-            //static std::vector<SkyTexture> cachedSkies;
             static std::vector<SkyTexture> skyTexture;
             static bool cached = false;
+            // Hard coded for now
             static std::string skyFolder = "C:/Users/marty/Desktop/Models/Textures/Skybox/NewSky/"; // <--- change to your folder or use Browse
             
-            const ImVec2 previewSize(64, 64);
+			const ImVec2 previewSize(64, 64); // button size for skybox previews in the grid
 
             // Header / controls
             ImGui::Begin(ICON_FA_EDIT " Environment Inspector");
@@ -644,32 +645,29 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 {
 
                     ImGui::Text("Sky Lab");
-                    ImGui::Separator();
+                    //ImGui::Separator();
 
                     // Controls: Browse + Reload
-                    if (ImGui::Button("Browse...")) {
-                        std::string picked = openFileDialog();
-                        if (!picked.empty()) {
-                            std::filesystem::path p(picked);
-                            if (std::filesystem::is_directory(p)) {
-                                skyFolder = p.string();
-                            }
-                            else {
-                                skyFolder = p.parent_path().string();
-                            }
-                            cached = false; // force reload
-                        }
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Reload")) {
-                        cached = false;
-                    }
-                    ImGui::SameLine();
+                    //if (ImGui::Button("Browse...")) {
+                    //    std::string picked = openFileDialog();
+                    //    if (!picked.empty()) {
+                    //        std::filesystem::path p(picked);
+                    //        if (std::filesystem::is_directory(p)) {
+                    //            skyFolder = p.string();
+                    //        }
+                    //        else {
+                    //            skyFolder = p.parent_path().string();
+                    //        }
+                    //        cached = false; // force reload
+                    //    }
+                    //}
+                    //ImGui::SameLine();
+                    //if (ImGui::Button("Reload")) {
+                    //    cached = false;
+                    //}
+                    /*ImGui::SameLine();
                     ImGui::Text("Folder: %s", skyFolder.c_str());
-                    ImGui::Spacing();
-
-
-                    
+                    ImGui::Spacing(); */                   
 
                   if (ShouldAddSkyBox) {
                         // Load once (or after Reload/Browse). Use a temporary LoadSkybox to call the helper.
@@ -682,7 +680,6 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                             try {
                                 skyTexture = tmpLoader.loadSkyTextureFromFolder(skyFolder);
 
-                                // cachedSkies = tmpLoader.loadSkyTextureFromFolder(skyFolder);
                             }
                             catch (...) {
                                 //cachedSkies.clear();
@@ -690,13 +687,6 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                             }
                             cached = true;
                         }
-
-                        // If nothing found, show message
-                       /* if (skyTexture.empty()) {
-                            ImGui::TextWrapped("No sky previews found in folder. Use Browse... to pick a file inside a sky folder or update the default path.");
-                            ImGui::End();
-                            return;
-                        }*/
 
                     
                     // Grid display
@@ -711,8 +701,6 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                            if (st.frontFaceTexID != 0) {
                                ImGui::ImageButton((void*)(intptr_t)st.frontFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0));
                        
-                               // if (m_actionCallback) m_actionCallback(std::string("AddSkyBox:") + st.path);
-                                
 							   // from here we need to go to CreatSkyBox in Engine to create the skybox and add it to the scene,
                                // we can pass the path of the skybox folder as a parameter to the callback and then load the textures
                                // again in Engine and create the skybox,
@@ -720,7 +708,9 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                                // for the skybox creation
 							   if (ImGui::IsItemClicked()) {
 								   if (m_actionCallback) {
-									   m_actionCallback(std::string("AddSkyBox:") + st.path); // correct path to the skybox folder
+                                       LOG_INFO("EnvExplorer: requested AddSkyBox for" << st.path.c_str());
+
+									   m_actionCallback(std::string("AddSkyBox:") + st.path); // correct path to the skybox folder & file
 								   }
 							   }
                            }
@@ -733,14 +723,8 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                        
                            }
                        
-                           // Label under preview (filename)
-                           /*std::string filename = std::filesystem::path(st.path).filename().string();
-                           ImGui::TextWrapped("%s", filename.c_str());*/
-                       
-                       
                            ImGui::PopID();
                            // layout: 3 columns
-                           //if ((idx % cols) != (cols - 1)) ImGui::SameLine();
                            if (++count % columns != 0) ImGui::SameLine();
                            //++idx;
                        }

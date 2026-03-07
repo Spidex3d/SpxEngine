@@ -18,7 +18,16 @@ LoadSkybox::LoadSkybox(int idx_, const std::string& name_, int m_skyIdx_)
 
 LoadSkybox::~LoadSkybox()
 {
-	DestroyGLTFMesh(m_skymesh);
+	DestroySkyMesh(m_skymesh);
+
+    if (frontFaceTexID) {
+        glDeleteTextures(1, &frontFaceTexID);
+        frontFaceTexID = 0;
+    }
+    if (sky_textureID) {
+        glDeleteTextures(1, &sky_textureID);
+        sky_textureID = 0;
+    }
 }
 
 void LoadSkybox::SkyBox()
@@ -143,30 +152,37 @@ inline unsigned char* extract_face(const unsigned char* src, int srcWidth, int s
     return face;
 }
 
+// Replacement for LoadSkybox::loadSkyTextureFromFolder to accept either a directory OR a full file path.
+// It avoids calling directory_iterator on a file path (which throws).
 std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& folderPath)
-//std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& folderPath, const std::string& skyFile)
 {
     std::vector<SkyTexture> sky_textures;
+    if (folderPath.empty()) return sky_textures;
 
-    for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
-    
-        if (!entry.is_regular_file()) continue;
-        std::string ext = entry.path().extension().string();
-        if (ext != ".png" && ext != ".jpg" && ext != ".bmp") continue;
+    std::filesystem::path p(folderPath);
 
-		//std::string testFolderPath = folderPath;
+    auto is_image_ext = [](const std::string& ext) {
+        if (ext.empty()) return false;
+        std::string e = ext;
+        for (auto& c : e) c = (char)std::tolower(c);
+        return (e == ".png" || e == ".jpg" || e == ".jpeg" || e == ".bmp");
+    };
 
-
-        std::string imagePath = entry.path().string();
-        //::string imagePath = testFolderPath.c_str();
-        int width, height, channels;
+    // Helper: process a single image file (sheet) and append its cubemap+preview to sky_textures.
+    auto processImage = [&](const std::string& imagePath) {
+        int width = 0, height = 0, channels = 0;
         unsigned char* data = stbi_load(imagePath.c_str(), &width, &height, &channels, 0);
         if (!data) {
             std::cerr << "Failed to load image: " << imagePath << "\n";
-            continue;
+            return;
         }
 
-        const int faceSize = 512;
+        // Try to infer faceSize from image layout (3 rows x 4 cols typical), fallback to 512
+        int faceSizeW = (width / 4);
+        int faceSizeH = (height / 3);
+        int faceSize = std::min(faceSizeW, faceSizeH);
+        if (faceSize <= 0) faceSize = 512;
+
         std::vector<std::pair<int, int>> facePositions = {
             {0, 1}, // Top
             {1, 0}, // Left
@@ -185,7 +201,7 @@ std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& 
             GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
         };
 
-        GLuint cubeMapID;
+        GLuint cubeMapID = 0;
         glGenTextures(1, &cubeMapID);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapID);
 
@@ -202,8 +218,8 @@ std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& 
                 channels == 4 ? GL_RGBA : GL_RGB,
                 GL_UNSIGNED_BYTE, face);
 
-            // Also create preview texture from FRONT face
-            if (i == 3) { // Front face (index 2) right face (index 3)
+            // Also create preview texture from RIGHT face (index 3) as before
+            if (i == 3) {
                 glGenTextures(1, &previewTexID);
                 glBindTexture(GL_TEXTURE_2D, previewTexID);
                 glTexImage2D(GL_TEXTURE_2D, 0,
@@ -213,23 +229,51 @@ std::vector<SkyTexture> LoadSkybox::loadSkyTextureFromFolder(const std::string& 
                     GL_UNSIGNED_BYTE, face);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glBindTexture(GL_TEXTURE_2D, 0);
             }
 
             delete[] face;
         }
 
+        // Cubemap sampling/wrap params
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
         stbi_image_free(data);
 
         sky_textures.push_back({ cubeMapID, imagePath, previewTexID });
+    };
+
+    // CASE 1: If the provided path is a regular file, just process that file
+    if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
+        if (is_image_ext(p.extension().string())) {
+            processImage(p.string());
+        }
+        else {
+            std::cerr << "loadSkyTextureFromFolder: provided file is not an image: " << folderPath << "\n";
+        }
+        return sky_textures;
     }
 
-	return sky_textures; // = 25 the number of sky textures found in the folder
+    // CASE 2: If it's not a file, but a directory, iterate the directory (existing behavior)
+    if (!std::filesystem::exists(p) || !std::filesystem::is_directory(p)) {
+        std::cerr << "loadSkyTextureFromFolder: path does not exist or is not a directory: " << folderPath << "\n";
+        return sky_textures;
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(p)) {
+        if (!entry.is_regular_file()) continue;
+        std::string ext = entry.path().extension().string();
+        if (!is_image_ext(ext)) continue;
+
+        processImage(entry.path().string());
+    }
+
+    return sky_textures; // number of sky textures found (e.g., 25)
 }
 
 
@@ -252,7 +296,7 @@ bool LoadSkybox::LoadFromFolder(const std::string& folderPath)
 
 
 
-void LoadSkybox::DestroyGLTFMesh(SkyMesh& m_skymesh)
+void LoadSkybox::DestroySkyMesh(SkyMesh& m_skymesh)
 {
     for (auto& sub : m_skymesh.submeshes) {
         if (sub.ebo) { glDeleteBuffers(1, &sub.ebo); sub.ebo = 0; }
@@ -262,3 +306,5 @@ void LoadSkybox::DestroyGLTFMesh(SkyMesh& m_skymesh)
     }
 	m_skymesh.submeshes.clear();
 }
+
+

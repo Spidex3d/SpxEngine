@@ -39,6 +39,11 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
     shader->setMat4("view", view);
 }
 
+//void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector,
+//    int& currentIndex, int& skyObjIdx, const std::string& folderPath, const std::string& skyFile, const glm::vec3& position)
+//{
+//}
+
 // construct a skybox entity from a file path (for now, we can just set up the cube geometry and load a cubemap texture;
 // the actual shader and rendering will be handled in RenderSkyBox)
 

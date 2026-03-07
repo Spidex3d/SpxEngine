@@ -23,6 +23,7 @@ struct SkyTexture {
     
 };
 
+
 class LoadSkybox : public GameObj {
 
 public:
@@ -48,7 +49,9 @@ public:
     GLuint getTextureID() const { return sky_textureID; }
     GLuint getFrontFaceTextureID() const { return frontFaceTexID; }
 
-    void DestroyGLTFMesh(SkyMesh& m_skymesh);
+    void DestroySkyMesh(SkyMesh& m_skymesh);
+
+    
 
 
 private:

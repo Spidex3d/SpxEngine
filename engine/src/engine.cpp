@@ -197,11 +197,107 @@ bool Engine::Initialize(const EngineConfig& config) {
         }
 
         // inside Engine::SetActionCallback lambda
-        if (cmd == "AddSkyBox") {
+        const std::string prefix = "AddSkyBox:";
+        if (cmd.rfind(prefix, 0) == 0) { // starts_with
+            std::string payload = cmd.substr(prefix.size());
+            // trim whitespace
+            auto trim = [](std::string& s) {
+                while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
+                while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
+            };
+            trim(payload);
+            if (payload.empty()) {
+                LOG_WARNING("Engine: AddSkyBox command received but no path provided");
+                return;
+            }
 
-			ShouldAddSkyBox = true; // set a flag to trigger skybox addition
-   
+            // Use the payload as-is (may be a folder OR a full file path)
+            std::string folderPath = payload; // keep filename if present
+
+            if (m_entity) {
+                // Call your existing CreateSkyBox which expects a folderPath string.
+                // We're passing the full path (folder or file). Adjust LoadFromFolder if needed to accept file paths.
+                m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+
+                m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                ImGui::SetWindowFocus("Object Inspector");
+                LOG_INFO("Engine: Added/updated skybox with payload: %s", folderPath.c_str());
+            }
+            else {
+                LOG_WARNING("Engine: no entity manager available to create skybox");
+            }
+
+            return; // handled the AddSkyBox action
         }
+
+        //if (cmd == "AddSkyBox") {
+        //    const std::string prefix = "AddSkyBox:";
+        //    if (cmd.rfind(prefix, 0) == 0) { // starts_with
+        //        std::string payload = cmd.substr(prefix.size());
+        //        // trim
+        //        auto trim = [](std::string& s) {
+        //            while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
+        //            while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
+        //        };
+        //        trim(payload);
+        //        if (payload.empty()) {
+        //            LOG_WARNING("Engine: AddSkyBox command received but no path provided");
+        //            return;
+        //        }
+
+        //        std::filesystem::path p(payload);
+        //        std::string folderPath;
+        //        
+
+        //        if (std::filesystem::exists(p) && std::filesystem::is_directory(p)) {
+        //            folderPath = p.string();
+        //            
+        //        }
+        //        else {
+        //            folderPath = p.parent_path().string();
+        //            
+        //        }
+
+        //        if (folderPath.empty()) {
+        //            LOG_WARNING("Engine: Could not determine folder for skybox from payload: %s", payload.c_str());
+        //            return;
+        //        }
+
+        //        if (m_entity) {
+        //            // Call CreateSkyBox (matches your CreateSkyBox signature used elsewhere)
+        //            m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+
+        //            m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+        //            ImGui::SetWindowFocus("Object Inspector");
+        //            LOG_INFO("Engine: Added/updated skybox from %s (file='%s')", folderPath.c_str());
+        //        }
+        //        else {
+        //            LOG_WARNING("Engine: no entity manager available to create skybox");
+        //        }
+
+        //        return; // handled this action
+        //    }
+        //}
+             
+                //     std::string folderPath;
+                //    
+                //     
+
+                //if (!folderPath.empty()) {
+                //    if (m_entity) {
+                //        // call CreateSkyBox with folderPath
+                //        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+                //        m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                //        ImGui::SetWindowFocus("Object Inspector");
+                //        LOG_INFO("Engine: Added skybox from " << folderPath);
+                //    }
+                //}
+                //else {
+                //    LOG_WARNING("Engine: Could not determine folder for skybox from chosen path: " << folderPath);
+                //}
+            //}
+   
+        
 
 
         if (cmd == "AddCube") {
@@ -651,17 +747,23 @@ void Engine::AddFloor(const glm::vec3& pos)
 
 
 // ###################################### Skybox addition ######################################
-void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
-{
-    if (!m_entity) return;
-    if (folderPath.empty()) return;
+//void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
+//void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
+//
+//{
+//    if (!m_entity) return;
+//    if (folderPath.empty()) return;
+//
+//    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, pos);
+//
+//    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+//    ImGui::SetWindowFocus("Object Inspector");
+//    LOG_INFO("Engine: Added object from file " << folderPath << " at pos (" << pos.x << "," << pos.y << "," << pos.z << ")");
+//}
 
-    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, pos);
 
-    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
-    ImGui::SetWindowFocus("Object Inspector");
-    LOG_INFO("Engine: Added object from file " << folderPath << " at pos (" << pos.x << "," << pos.y << "," << pos.z << ")");
-}
+
+
 
 
 
