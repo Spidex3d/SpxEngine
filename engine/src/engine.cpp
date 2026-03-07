@@ -196,7 +196,7 @@ bool Engine::Initialize(const EngineConfig& config) {
             }
         }
 
-        // inside Engine::SetActionCallback lambda
+        // ---- Handle "AddSkyBox:<path>" without creating duplicates ----
         const std::string prefix = "AddSkyBox:";
         if (cmd.rfind(prefix, 0) == 0) { // starts_with
             std::string payload = cmd.substr(prefix.size());
@@ -211,17 +211,40 @@ bool Engine::Initialize(const EngineConfig& config) {
                 return;
             }
 
-            // Use the payload as-is (may be a folder OR a full file path)
-            std::string folderPath = payload; // keep filename if present
+            // Use payload exactly as sent by the UI (may be folder or file path)
+            std::string pathToLoad = payload;
 
+            // 1) Try to find an existing skybox in the scene and update it
+            for (int i = 0; i < (int)m_entities.size(); ++i) {
+                GameObj* obj = m_entities[i].get();
+                if (!obj) continue;
+                if (auto* sky = dynamic_cast<LoadSkybox*>(obj)) {
+                    // Attempt to replace the cubemap on the existing sky object
+                    LOG_INFO("Engine: updating existing skybox (entity %d) with %s", sky->entId, pathToLoad.c_str());
+                    // Make sure LoadFromFolder accepts a file path too (it should). It should also free previous textures.
+                    if (!sky->LoadFromFolder(pathToLoad)) {
+                        LOG_WARNING("Engine: LoadFromFolder failed for %s (existing sky not replaced).", pathToLoad.c_str());
+                    }
+                    else {
+                        // mark selection to this skybox
+                        m_selectedEntityIndex = i;
+                        ImGui::SetWindowFocus("Object Inspector");
+                        LOG_INFO("Engine: updated existing skybox entity %d", sky->entId);
+                    }
+                    return; // handled
+                }
+            }
+
+            // 2) No existing skybox found -> create a new one
+            LOG_INFO("Engine: no existing skybox found, creating new skybox from %s", pathToLoad.c_str());
             if (m_entity) {
-                // Call your existing CreateSkyBox which expects a folderPath string.
-                // We're passing the full path (folder or file). Adjust LoadFromFolder if needed to accept file paths.
-                m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+                // CreateSkyBox expects folderPath in your code; we pass the payload which may be a file path or folder.
+                // Your LoadSkybox::LoadFromFolder should handle file paths. If it expects a folder, adjust accordingly.
+                m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, pathToLoad, glm::vec3(0.0f));
 
                 m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
                 ImGui::SetWindowFocus("Object Inspector");
-                LOG_INFO("Engine: Added/updated skybox with payload: %s", folderPath.c_str());
+                LOG_INFO("Engine: created new skybox entity (index %d) from %s", m_selectedEntityIndex, pathToLoad.c_str());
             }
             else {
                 LOG_WARNING("Engine: no entity manager available to create skybox");
@@ -230,72 +253,41 @@ bool Engine::Initialize(const EngineConfig& config) {
             return; // handled the AddSkyBox action
         }
 
-        //if (cmd == "AddSkyBox") {
-        //    const std::string prefix = "AddSkyBox:";
-        //    if (cmd.rfind(prefix, 0) == 0) { // starts_with
-        //        std::string payload = cmd.substr(prefix.size());
-        //        // trim
-        //        auto trim = [](std::string& s) {
-        //            while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
-        //            while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
-        //        };
-        //        trim(payload);
-        //        if (payload.empty()) {
-        //            LOG_WARNING("Engine: AddSkyBox command received but no path provided");
-        //            return;
-        //        }
-
-        //        std::filesystem::path p(payload);
-        //        std::string folderPath;
-        //        
-
-        //        if (std::filesystem::exists(p) && std::filesystem::is_directory(p)) {
-        //            folderPath = p.string();
-        //            
-        //        }
-        //        else {
-        //            folderPath = p.parent_path().string();
-        //            
-        //        }
-
-        //        if (folderPath.empty()) {
-        //            LOG_WARNING("Engine: Could not determine folder for skybox from payload: %s", payload.c_str());
-        //            return;
-        //        }
-
-        //        if (m_entity) {
-        //            // Call CreateSkyBox (matches your CreateSkyBox signature used elsewhere)
-        //            m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
-
-        //            m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
-        //            ImGui::SetWindowFocus("Object Inspector");
-        //            LOG_INFO("Engine: Added/updated skybox from %s (file='%s')", folderPath.c_str());
-        //        }
-        //        else {
-        //            LOG_WARNING("Engine: no entity manager available to create skybox");
-        //        }
-
-        //        return; // handled this action
+        // inside Engine::SetActionCallback lambda
+        //const std::string prefix = "AddSkyBox:";
+        //if (cmd.rfind(prefix, 0) == 0) { // starts_with
+        //    std::string payload = cmd.substr(prefix.size());
+        //    // trim whitespace
+        //    auto trim = [](std::string& s) {
+        //        while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
+        //        while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
+        //    };
+        //    trim(payload);
+        //    if (payload.empty()) {
+        //        LOG_WARNING("Engine: AddSkyBox command received but no path provided");
+        //        return;
         //    }
-        //}
-             
-                //     std::string folderPath;
-                //    
-                //     
 
-                //if (!folderPath.empty()) {
-                //    if (m_entity) {
-                //        // call CreateSkyBox with folderPath
-                //        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
-                //        m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
-                //        ImGui::SetWindowFocus("Object Inspector");
-                //        LOG_INFO("Engine: Added skybox from " << folderPath);
-                //    }
-                //}
-                //else {
-                //    LOG_WARNING("Engine: Could not determine folder for skybox from chosen path: " << folderPath);
-                //}
-            //}
+        //    // Use the payload as-is (may be a folder OR a full file path)
+        //    std::string folderPath = payload; // keep filename if present
+
+        //    if (m_entity) {
+        //        // Call your existing CreateSkyBox which expects a folderPath string.
+        //        // We're passing the full path (folder or file). Adjust LoadFromFolder if needed to accept file paths.
+        //        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
+
+        //        m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+        //        ImGui::SetWindowFocus("Object Inspector");
+        //        LOG_INFO("Engine: Added/updated skybox with payload: %s", folderPath.c_str());
+        //    }
+        //    else {
+        //        LOG_WARNING("Engine: no entity manager available to create skybox");
+        //    }
+
+        //    return; // handled the AddSkyBox action
+        //}
+
+        
    
         
 

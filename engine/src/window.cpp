@@ -645,29 +645,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 {
 
                     ImGui::Text("Sky Lab");
-                    //ImGui::Separator();
-
-                    // Controls: Browse + Reload
-                    //if (ImGui::Button("Browse...")) {
-                    //    std::string picked = openFileDialog();
-                    //    if (!picked.empty()) {
-                    //        std::filesystem::path p(picked);
-                    //        if (std::filesystem::is_directory(p)) {
-                    //            skyFolder = p.string();
-                    //        }
-                    //        else {
-                    //            skyFolder = p.parent_path().string();
-                    //        }
-                    //        cached = false; // force reload
-                    //    }
-                    //}
-                    //ImGui::SameLine();
-                    //if (ImGui::Button("Reload")) {
-                    //    cached = false;
-                    //}
-                    /*ImGui::SameLine();
-                    ImGui::Text("Folder: %s", skyFolder.c_str());
-                    ImGui::Spacing(); */                   
+                              
 
                   if (ShouldAddSkyBox) {
                         // Load once (or after Reload/Browse). Use a temporary LoadSkybox to call the helper.
