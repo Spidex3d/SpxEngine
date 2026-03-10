@@ -55,6 +55,7 @@ public:
 	void MainScreenMenu(GLFWwindow* window); // main glfw menu bar
 	void ResourcesInspector(GLFWwindow* window); // resource inspector window
 	void EnvironmentExplorer(GLFWwindow* window); // environment explorer window Sky and lighting fog particals
+	void AssetBrowser(GLFWwindow* window); // asset browser window for loading models and textures into the scene
     void Creat_FrameBuffer();                 // create or recreate the framebuffer using current size
     void Bind_Framebuffer();                  // bind the offscreen FBO for rendering
     void Unbinde_Frambuffer();                // unbind (return to default framebuffer)
@@ -95,6 +96,8 @@ public:
     void* GetNativeWindow() const;
 
     std::string openFileDialog();
+
+    std::string openSaveFileDialog(const char* defaultExt = "spxscene", const char* filter = "Scene Files\0*.spx\0All Files\0*.*\0\0");
 
 
     

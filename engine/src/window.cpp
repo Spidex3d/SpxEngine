@@ -355,6 +355,8 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     
     if (ImGui::BeginPopup("RightClickMenu"))
     {
+        
+
         if (ImGui::BeginMenu("Add a new model")) {
             if (ImGui::MenuItem("Obj Model")) {
                 // Request engine to add a Obj via action callback
@@ -446,11 +448,13 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_SAVE" Save scene"))
         {
-
+			if (m_actionCallback) m_actionCallback("SaveScene"); // save the scene via action callback to engine to a json file
         }
+
+        
         if (ImGui::MenuItem("Save As scene"))
         {
-
+    
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_SIGN_OUT_ALT" Exit"))
@@ -741,6 +745,41 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         
     }
 
+    void SpxWindow::AssetBrowser(GLFWwindow* window)
+    {
+        ImGui::Begin(ICON_FA_EDIT " Asset Browser");
+        if (ImGui::BeginTabBar("##MainEnviro", ImGuiTabBarFlags_None))
+            if (ImGui::BeginTabItem("Texture Lab"))
+            {
+                // TO DO Later
+                // Dispaly types of Textues we can use as image buttons
+
+
+                ImGui::EndTabItem();
+            } // End Particles Lab
+            if (ImGui::BeginTabItem("Obj Lab"))
+            {
+                // TO DO Later
+                // Dispaly types of Obj models we can use as image buttons
+
+
+                ImGui::EndTabItem();
+            } // End Particles Lab
+            if (ImGui::BeginTabItem("Gltf Lab"))
+            {
+                // TO DO Later
+                // Dispaly types of Gltf models we can use  as image buttons
+
+
+                ImGui::EndTabItem();
+            } // End Particles Lab
+
+            ImGui::EndTabItem();
+
+		ImGui::End();
+
+    }
+
     
 
 // Create or recreate the FBO using current window size if needed
@@ -982,6 +1021,75 @@ std::string SpxWindow::openFileDialog()
         }
         return std::string();
     }
+}
+
+std::string SpxWindow::openSaveFileDialog(const char* defaultExt, const char* filter)
+{
+    // Uses Win32 GetSaveFileNameW to show a Save dialog and returns UTF-8 path.
+    OPENFILENAMEW ofn;
+    std::vector<wchar_t> filename(MAX_PATH, L'\0');
+
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL; // or obtain HWND from GLFW if you want parented dialog
+    ofn.lpstrFile = filename.data();
+    ofn.nMaxFile = static_cast<DWORD>(filename.size());
+
+    // filter must be a double-null terminated wide string. We accept UTF-8 filter parameter.
+    // Convert filter to wide char and ensure double-null termination.
+    std::wstring wfilter;
+    if (filter && filter[0]) {
+        int required = MultiByteToWideChar(CP_UTF8, 0, filter, -1, nullptr, 0);
+        if (required > 0) {
+            wfilter.resize(required);
+            MultiByteToWideChar(CP_UTF8, 0, filter, -1, &wfilter[0], required);
+            // Ensure double null termination
+            if (wfilter.size() == 0 || wfilter.back() != L'\0') wfilter.push_back(L'\0');
+        }
+    }
+    else {
+        wfilter = L"JSON Files\0*.json\0All Files\0*.*\0\0";
+    }
+    ofn.lpstrFilter = wfilter.c_str();
+    ofn.nFilterIndex = 1;
+
+    // Default extension (e.g. "json")
+    std::wstring wdefExt;
+    if (defaultExt && defaultExt[0]) {
+        int req = MultiByteToWideChar(CP_UTF8, 0, defaultExt, -1, nullptr, 0);
+        if (req > 0) {
+            wdefExt.resize(req);
+            MultiByteToWideChar(CP_UTF8, 0, defaultExt, -1, &wdefExt[0], req);
+        }
+    }
+    ofn.lpstrDefExt = wdefExt.empty() ? nullptr : wdefExt.c_str();
+
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+
+    // Prompt to overwrite existing files
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_EXPLORER;
+
+    std::string result;
+
+    if (GetSaveFileNameW(&ofn)) {
+        // Convert wide string to UTF-8
+        int required = WideCharToMultiByte(CP_UTF8, 0, ofn.lpstrFile, -1, nullptr, 0, nullptr, nullptr);
+        if (required > 0) {
+            std::vector<char> utf8(required, 0);
+            WideCharToMultiByte(CP_UTF8, 0, ofn.lpstrFile, -1, utf8.data(), required, nullptr, nullptr);
+            result.assign(utf8.data());
+        }
+    }
+    else {
+        DWORD err = CommDlgExtendedError();
+        if (err != 0) {
+            LOG_WARNING("openSaveFileDialog: GetSaveFileNameW failed, CommDlgExtendedError=" << err);
+        }
+    }
+
+    return result;
 }
  
 

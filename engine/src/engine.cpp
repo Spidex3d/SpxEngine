@@ -20,11 +20,84 @@
 #include "../src/Sky/skyBox.h"
 #include "../Shaders/ShaderManager.h"
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 
-//class objLoader; // forward declaration of objLoader, since Engine will create objLoader instances but doesn't need its full definition here
-
+// Minimal JSON-safe string escaper (handles quotes and backslashes) ### This is used for serializing scene data to JSON (e.g. for SaveScene) 
+// and should be sufficient for simple strings like file paths and names.
+// It does not handle Unicode or other special characters, but it covers the basics needed for our use case.
+static std::string JsonEscape(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        switch (c) {
+        case '\\': out += "\\\\"; break;
+        case '\"': out += "\\\""; break;
+        case '\n': out += "\\n";  break;
+        case '\r': out += "\\r";  break;
+        case '\t': out += "\\t";  break;
+        default: out += c; break;
+        }
+    }
+    return out;
+}
 Engine::Engine() = default;
 Engine::~Engine() { Shutdown(); }
+
+bool Engine::SaveScene(const std::string& path)
+{
+    if (path.empty()) return false;
+
+    std::ofstream out(path, std::ios::out | std::ios::trunc);
+    if (!out.is_open()) {
+        LOG_WARNING("Engine::SaveScene: could not open file " << path);
+        return false;
+    }
+
+    // Header
+    out << "{\n";
+    out << "  \"version\": 1,\n";
+    out << "  \"entities\": [\n";
+
+    bool firstEntity = true;
+    for (const auto& entPtr : m_entities) {
+        if (!entPtr) continue;
+
+        // write comma between objects
+        if (!firstEntity) out << ",\n";
+        firstEntity = false;
+
+        // Use generic_string for paths if you later want to store asset paths.
+        // Emit basic transform fields and identifiers.
+        int id = entPtr->entId;
+        std::string name = entPtr->entName;
+        // entTypeID may be available (numeric enum). Save it if present.
+        int typeId = entPtr->entTypeID;
+
+        // Positions/rotations/scales are glm::vec3
+        glm::vec3 pos = entPtr->position;
+        glm::vec3 rot = entPtr->rotation;
+        glm::vec3 scl = entPtr->scale;
+
+        // Compose object JSON (manual formatting)
+        out << "    {\n";
+        out << "      \"id\": " << id << ",\n";
+        out << "      \"name\": \"" << JsonEscape(name) << "\",\n";
+        out << "      \"typeId\": " << typeId << ",\n";
+
+        out << "      \"position\": [" << pos.x << ", " << pos.y << ", " << pos.z << "],\n";
+        out << "      \"rotation\": [" << rot.x << ", " << rot.y << ", " << rot.z << "],\n";
+        out << "      \"scale\": [" << scl.x << ", " << scl.y << ", " << scl.z << "]\n";
+
+        out << "    }";
+    }
+
+    out << "\n  ]\n";
+    out << "}\n";
+
+    out.close();
+    return true;
+}
 
 bool Engine::Initialize(const EngineConfig& config) {
     m_config = config;
@@ -150,7 +223,32 @@ bool Engine::Initialize(const EngineConfig& config) {
 
     // Register action callback (UI -> Engine) so clicking "Add Plane" invokes Engine::AddPlane
     window->SetActionCallback([this](const std::string& cmd) {
-       
+        if (cmd == "SaveScene") {
+            // Ask UI for a file path (reuse openFileDialog). If the user cancelled, do nothing.
+            std::string savePath;
+            if (window) {
+                savePath = window->openSaveFileDialog("spxscene", "Scene Files\0*.spx\0All Files\0*.*\0\0");
+                //savePath = window->openSaveFileDialog("json", "JSON Files\0*.json\0All Files\0*.*\0\0");
+
+            }
+
+            if (savePath.empty()) {
+                LOG_INFO("Engine: SaveScene cancelled by user");
+            }
+            else {
+                if (SaveScene(savePath)) {
+                    LOG_INFO("Engine: Scene saved to " << savePath);
+                }
+                else {
+                    LOG_WARNING("Engine: Failed to save scene to " << savePath);
+                }
+            }
+            return;
+        }
+
+
+
+
 		// gltf Models
         if (cmd == "AddGltf") {
             // Open file dialog via the window (UI owned by SpxWindow)
@@ -252,40 +350,6 @@ bool Engine::Initialize(const EngineConfig& config) {
 
             return; // handled the AddSkyBox action
         }
-
-        // inside Engine::SetActionCallback lambda
-        //const std::string prefix = "AddSkyBox:";
-        //if (cmd.rfind(prefix, 0) == 0) { // starts_with
-        //    std::string payload = cmd.substr(prefix.size());
-        //    // trim whitespace
-        //    auto trim = [](std::string& s) {
-        //        while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
-        //        while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
-        //    };
-        //    trim(payload);
-        //    if (payload.empty()) {
-        //        LOG_WARNING("Engine: AddSkyBox command received but no path provided");
-        //        return;
-        //    }
-
-        //    // Use the payload as-is (may be a folder OR a full file path)
-        //    std::string folderPath = payload; // keep filename if present
-
-        //    if (m_entity) {
-        //        // Call your existing CreateSkyBox which expects a folderPath string.
-        //        // We're passing the full path (folder or file). Adjust LoadFromFolder if needed to accept file paths.
-        //        m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, glm::vec3(0.0f));
-
-        //        m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
-        //        ImGui::SetWindowFocus("Object Inspector");
-        //        LOG_INFO("Engine: Added/updated skybox with payload: %s", folderPath.c_str());
-        //    }
-        //    else {
-        //        LOG_WARNING("Engine: no entity manager available to create skybox");
-        //    }
-
-        //    return; // handled the AddSkyBox action
-        //}
 
         
    
@@ -403,6 +467,16 @@ void Engine::Run() {
             // Ensure the dockspace exists before other windows so they can dock into it
             window->MainDockSpace(nullptr);
 
+
+			
+            // ############################## Score board ################################
+            
+            // ############################## End Score board ################################
+
+            // ############################## Asset Manager ################################
+
+            // ############################## End Asset Manager ################################
+           
             // ############################## object editor ################################
            
             if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
@@ -608,6 +682,7 @@ void Engine::Run() {
 			window->MainScreenMenu(glfwwindow);
             window->ResourcesInspector(glfwwindow);
 			window->EnvironmentExplorer(glfwwindow);
+			window->AssetBrowser(glfwwindow);
 
          // ##################################################### Picking ########################################################
 		 // ProcessViewportPick is in EditorInput and returns the picked entity index or -1 if none.

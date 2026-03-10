@@ -34,6 +34,9 @@ public:
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
 
+    // ######################### save scene ##########################################
+    bool SaveScene(const std::string& path);
+
     bool Initialize(const EngineConfig& config);
     void Run();
     void Tick(float dt);
@@ -57,7 +60,7 @@ public:
 	//void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
 	//void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
     
-    
+
     
 
     // Access camera
