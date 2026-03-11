@@ -5,6 +5,7 @@
 #include <imgui\ImGuiAF.h>
 #include <imgui\imgui.h>
 #include <imgui\imgui_internal.h>
+#include "../src/Textures/textures.h"
 
 // Ensure GLFW doesn't include OpenGL headers (safe when glad is used to load GL)
 #ifndef GLFW_INCLUDE_NONE
@@ -99,6 +100,7 @@ public:
 
     std::string openSaveFileDialog(const char* defaultExt = "spxscene", const char* filter = "Scene Files\0*.spx\0All Files\0*.*\0\0");
 
+    std::string openFolderDialog();
 
     
     
@@ -111,6 +113,7 @@ private:
     WindowConfig m_config;
     ResizeCallback m_resizeCallback = nullptr;
 
+    std::vector<TexTexture> m_texTextures;
 
     // Framebuffer resources for the main scene view
     GLuint m_fbo = 0;

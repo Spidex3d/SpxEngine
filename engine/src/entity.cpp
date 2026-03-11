@@ -4,7 +4,7 @@
 #include "../include/log.h"
 
 #include <engine.h>
-#include "../include/textures.h"
+#include "../src/Textures/textures.h"
 #include "../include/shader.h"
 #include "../src/Model_loaders/objLoader.h"
 #include "../src/Model_loaders/gltf.h"

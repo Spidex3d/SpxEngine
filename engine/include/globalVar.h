@@ -5,7 +5,8 @@
 constexpr const char* TEXTURE_PATH = "assets/textures/texture/";
 constexpr const char* SHADER_PATH = "Shaders/";
 
-extern bool ShouldAddSkyBox;
+extern bool ShouldAddSkyBox; // if set to true add skybox images to buttons
+extern bool ShouldAddTextures; // if set to true add textures to buttons in asset browser tab
 
 extern const int MAIN_GRID;
 extern const int OBJ_CUBE;

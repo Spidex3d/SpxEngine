@@ -163,7 +163,7 @@
     <ClCompile Include="src\Model_loaders\objLoader.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\Sky\skyBox.cpp" />
-    <ClCompile Include="src\textures.cpp" />
+    <ClCompile Include="src\Textures\textures.cpp" />
     <ClCompile Include="src\Ui\icon_loader.cpp" />
     <ClCompile Include="src\window.cpp" />
     <ClCompile Include="src\imgui.cpp" />
@@ -179,7 +179,7 @@
     <ClInclude Include="include\globalVar.h" />
     <ClInclude Include="include\log.h" />
     <ClInclude Include="include\shader.h" />
-    <ClInclude Include="include\textures.h" />
+    <ClInclude Include="src\Textures\textures.h" />
     <ClInclude Include="include\window.h" />
     <ClInclude Include="Shaders\ShaderManager.h" />
     <ClInclude Include="src\Camera\Camera.h" />

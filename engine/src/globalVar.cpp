@@ -3,6 +3,7 @@
 
 
 bool ShouldAddSkyBox = false;
+bool ShouldAddTextures = false;
 
 const int MAIN_GRID = 0; // this is for the editor grid
 const int OBJ_CUBE = 1;

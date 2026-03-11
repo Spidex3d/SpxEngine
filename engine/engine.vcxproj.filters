@@ -54,7 +54,7 @@
     <ClCompile Include="src\globalVar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\textures.cpp">
+    <ClCompile Include="src\Textures\textures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\shader.cpp">
@@ -137,7 +137,7 @@
     <ClInclude Include="include\globalVar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\textures.h">
+    <ClInclude Include="src\Textures\textures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\shader.h">

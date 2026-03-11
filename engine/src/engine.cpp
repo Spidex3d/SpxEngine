@@ -529,6 +529,9 @@ void Engine::Run() {
                         ImGui::Text("Gameplay Properties");
                         ImGui::InputInt("Points", &selected->entPoints);
                         if (ImGui::Checkbox("Active", &selected->isActive)) { /* optionally handle enable/disable */ }
+						if (ImGui::Checkbox("Rotate Y", &selected->rotateY)) {
+							// toggling rotateY will cause the object to start/stop rotating in the render loop
+						}
                         if (ImGui::Checkbox("Health Pack", &selected->isHealthPack)) {
                             // show health points input only if flagged
                         }

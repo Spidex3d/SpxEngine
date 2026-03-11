@@ -22,10 +22,29 @@
 #include "log.h"
 #include <iostream>
 #include <minwindef.h>
+#include <shobjidl.h> // for IFileDialog / folder picking
+#include "Textures\textures.h"
 
 
 // initialize static refcount
 int SpxWindow::s_glfwRefCount = 0;
+
+
+// Frees a vector<TexTexture> using TextureManager so refcounts are decremented.
+
+static void FreeTexTextureList(std::vector<TexTexture>& list) {
+    for (auto& t : list) {
+        if (!t.path.empty()) {
+            TextureManager::Unload(t.path);
+        }
+        else if (t.id) {
+            TextureManager::Unload(t.id);
+        }
+        t.id = 0;
+        t.TexFaceTexID = 0;
+    }
+    list.clear();
+}
 
 // small helper to destroy existing framebuffer resources
 static void DestroyFBO(GLuint& fbo, GLuint& color, GLuint& depth) {
@@ -747,16 +766,89 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
     void SpxWindow::AssetBrowser(GLFWwindow* window)
     {
+
+        static std::vector<TexTexture> texTexture;
+
         ImGui::Begin(ICON_FA_EDIT " Asset Browser");
         if (ImGui::BeginTabBar("##MainEnviro", ImGuiTabBarFlags_None))
-            if (ImGui::BeginTabItem("Texture Lab"))
+            if (ImGui::BeginTabItem("Level Template"))
             {
                 // TO DO Later
-                // Dispaly types of Textues we can use as image buttons
+                // Dispaly types of Levels to set up ie: Blank, default, FPS, Top Down, ect; we can use as image buttons
 
 
                 ImGui::EndTabItem();
-            } // End Particles Lab
+            } // End Level Lab
+            if (ImGui::BeginTabItem("Texture Lab"))
+            {
+                    // TO DO Later
+                    // Dispaly types of Textues we can use as image buttons
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+
+
+                ImGui::PushID("tex_Buttons");
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // normal
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f)); // hover
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
+                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f)); // active/click
+
+                ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
+                ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
+
+                ImGui::Text("ID: Texture Lab");
+                ImGui::Text("Spidex Engine New Texture Lab", nullptr);
+                
+
+                if (ImGui::Button("Open Texture")) {
+                 std::string picked = openFolderDialog();
+                    if (!picked.empty()) {
+                        // Free previously cached previews to avoid leaks (must be called with GL context)
+                        FreeTexTextureList(texTexture);
+
+                        // Load new previews (this will create GL textures and return vector)
+                        texTexture = TextureManager::LoadTexturesFromDirectory(picked);
+
+                        LOG_INFO("AssetBrowser: loaded " << texTexture.size() << " textures from " << picked);
+                    }
+                    else {
+                        LOG_INFO("AssetBrowser: openFolderDialog cancelled or no folder selected");
+                    }
+                    
+                }
+
+                
+
+                ImGui::PopStyleVar(2);
+                ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
+                ImGui::PopID();
+
+                int columns = 20;
+                int count = 0;
+                const ImVec2 previewSize(32, 32);
+
+                for (const auto& st : texTexture) {
+                    ImGui::PushID((int)st.id);
+
+                    if (st.TexFaceTexID != 0) {
+                        if (ImGui::ImageButton((void*)(intptr_t)st.TexFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0))) {
+                            // Apply texture to selected object
+                            if (m_actionCallback) {
+                                m_actionCallback(std::string("SetTexture:") + st.path);
+                            }
+                        }
+                    }
+                    else {
+                        ImGui::Button("No Preview", previewSize);
+                    }
+
+                    ImGui::PopID();
+                    if (++count % columns != 0) ImGui::SameLine();
+                }
+
+                ImGui::EndTabItem();
+            } // End Texture Lab
             if (ImGui::BeginTabItem("Obj Lab"))
             {
                 // TO DO Later
@@ -764,7 +856,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
 
                 ImGui::EndTabItem();
-            } // End Particles Lab
+            } // End Obj Lab
             if (ImGui::BeginTabItem("Gltf Lab"))
             {
                 // TO DO Later
@@ -772,7 +864,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
 
                 ImGui::EndTabItem();
-            } // End Particles Lab
+            } // End Gltf Lab
 
             ImGui::EndTabItem();
 
@@ -863,10 +955,6 @@ void SpxWindow::Rescale_frambuffer(float width, float height)
     LOG_INFO("Created FBO %u (color=%u depth=%u) size=%dx%d", (unsigned)m_fbo, (unsigned)m_fboColor, (unsigned)m_fboDepth, w, h);
 }
 
-//void SpxWindow::MainObjectExplorerWindow(GLFWwindow* window)
-//{
-//    
-//}
 
 void SpxWindow::SetRenderCallback(RenderCallback cb) {
     m_renderCallback = std::move(cb);
@@ -904,6 +992,7 @@ void SpxWindow::ImGuiShutdown()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
 }
 // ############################################# End ImGui Set up #############################################
 
@@ -969,6 +1058,7 @@ void SpxWindow::SetResizeCallback(ResizeCallback cb) {
 void* SpxWindow::GetNativeWindow() const {
     return reinterpret_cast<void*>(window);
 }
+
 
 //New Openfile dialog and return the selected file path as a string. Uses Windows API.
 std::string SpxWindow::openFileDialog()
@@ -1089,6 +1179,61 @@ std::string SpxWindow::openSaveFileDialog(const char* defaultExt, const char* fi
         }
     }
 
+    return result;
+}
+
+std::string SpxWindow::openFolderDialog()
+{
+    // Initialize COM for this thread (balanced with CoUninitialize below).
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr)) {
+        LOG_WARNING("openFolderDialog: CoInitializeEx failed");
+        return std::string();
+    }
+
+    std::string result;
+
+    IFileDialog* pFileDialog = nullptr;
+    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog));
+    if (SUCCEEDED(hr) && pFileDialog) {
+        // Ask for folder selection only
+        DWORD options = 0;
+        if (SUCCEEDED(pFileDialog->GetOptions(&options))) {
+            pFileDialog->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+        }
+
+        // Show dialog (NULL owner; you can pass HWND if you want to parent it)
+        hr = pFileDialog->Show(NULL);
+        if (SUCCEEDED(hr)) {
+            IShellItem* pItem = nullptr;
+            if (SUCCEEDED(pFileDialog->GetResult(&pItem)) && pItem) {
+                PWSTR pszPath = nullptr;
+                if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszPath)) && pszPath) {
+                    // convert wide string to UTF-8
+                    int required = WideCharToMultiByte(CP_UTF8, 0, pszPath, -1, nullptr, 0, nullptr, nullptr);
+                    if (required > 0) {
+                        std::vector<char> utf8(required, 0);
+                        WideCharToMultiByte(CP_UTF8, 0, pszPath, -1, utf8.data(), required, nullptr, nullptr);
+                        result.assign(utf8.data());
+                    }
+                    CoTaskMemFree(pszPath);
+                }
+                pItem->Release();
+            }
+        }
+        else {
+            // user cancelled or error; do nothing (result is empty)
+            DWORD dlgErr = CommDlgExtendedError();
+            (void)dlgErr; // ignore or log if you like
+        }
+
+        pFileDialog->Release();
+    }
+    else {
+        LOG_WARNING("openFolderDialog: CoCreateInstance(CLSID_FileOpenDialog) failed");
+    }
+
+    CoUninitialize();
     return result;
 }
  

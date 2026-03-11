@@ -57,12 +57,6 @@ public:
 	// Add a floor to the scene at the given position (default center)
 	void AddFloor(const glm::vec3& pos = glm::vec3(0.0f));
    
-	//void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
-	//void AddSkyBox(const std::string& folderPath, const glm::vec3& pos = glm::vec3(0.0f)); // Add a skybox to the scene from the given file path
-    
-
-    
-
     // Access camera
     Camera& GetCamera() { return m_camera; }
 
