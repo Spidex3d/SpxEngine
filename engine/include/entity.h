@@ -59,9 +59,13 @@ struct GameObj { // Any game object not player-related
     bool isDangerous;
     bool isCollidable;      // Collision detection on or off, off for things like grass or small decor
     bool isVisible;         // Render or not
-
+	// Textures for game objects like cubes and planes,
     unsigned int tex_ID;
 	std::string texPath; // path to the texture file, used for loading and debugging, not used at runtime after texture is loaded
+    // used for complex models that have their own materials/textures (like gltf/obj models) but can be applied to them as a single texture
+    // if desired (e.g. for quick testing or if the model is untextured)
+    
+
 };
 
 class Entity // Give this more thought !!

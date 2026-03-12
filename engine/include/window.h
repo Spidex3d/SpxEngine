@@ -113,7 +113,7 @@ private:
     WindowConfig m_config;
     ResizeCallback m_resizeCallback = nullptr;
 
-    std::vector<TexTexture> m_texTextures;
+	std::vector<TexTexture> m_texTextures; // keep track of loaded textures for cleanup (if needed)
 
     // Framebuffer resources for the main scene view
     GLuint m_fbo = 0;

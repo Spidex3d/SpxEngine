@@ -23,6 +23,9 @@
 #include <fstream>
 #include <sstream>
 
+#include <json/json.hpp>
+using json = nlohmann::json;
+
 // Minimal JSON-safe string escaper (handles quotes and backslashes) ### This is used for serializing scene data to JSON (e.g. for SaveScene) 
 // and should be sufficient for simple strings like file paths and names.
 // It does not handle Unicode or other special characters, but it covers the basics needed for our use case.
@@ -67,23 +70,23 @@ bool Engine::SaveScene(const std::string& path)
         if (!firstEntity) out << ",\n";
         firstEntity = false;
 
-        // Use generic_string for paths if you later want to store asset paths.
-        // Emit basic transform fields and identifiers.
         int id = entPtr->entId;
         std::string name = entPtr->entName;
-        // entTypeID may be available (numeric enum). Save it if present.
         int typeId = entPtr->entTypeID;
 
-        // Positions/rotations/scales are glm::vec3
         glm::vec3 pos = entPtr->position;
         glm::vec3 rot = entPtr->rotation;
         glm::vec3 scl = entPtr->scale;
 
-        // Compose object JSON (manual formatting)
         out << "    {\n";
         out << "      \"id\": " << id << ",\n";
         out << "      \"name\": \"" << JsonEscape(name) << "\",\n";
         out << "      \"typeId\": " << typeId << ",\n";
+
+        // If this entity has a texture path, write it (escape)
+        if (!entPtr->texPath.empty()) {
+            out << "      \"texPath\": \"" << JsonEscape(entPtr->texPath) << "\",\n";
+        }
 
         out << "      \"position\": [" << pos.x << ", " << pos.y << ", " << pos.z << "],\n";
         out << "      \"rotation\": [" << rot.x << ", " << rot.y << ", " << rot.z << "],\n";
@@ -96,6 +99,120 @@ bool Engine::SaveScene(const std::string& path)
     out << "}\n";
 
     out.close();
+    return true;
+
+}
+
+bool Engine::LoadScene(const std::string& path)
+{
+    if (path.empty()) return false;
+
+    std::ifstream in(path);
+    if (!in.is_open()) {
+        LOG_WARNING("Engine::LoadScene: could not open file " << path);
+        return false;
+    }
+
+    json root;
+    try {
+        in >> root;
+    }
+    catch (const std::exception& e) {
+        LOG_WARNING("Engine::LoadScene: JSON parse error: " << e.what());
+        in.close();
+        return false;
+    }
+    in.close();
+
+    // Unload any textures referenced by current entities to avoid leaks
+    for (auto& entPtr : m_entities) {
+        if (!entPtr) continue;
+        if (!entPtr->texPath.empty()) {
+            // TextureManager::Unload will decrement refcount and delete if zero
+            TextureManager::Unload(entPtr->texPath);
+            entPtr->texPath.clear();
+        }
+        if (entPtr->tex_ID) {
+            TextureManager::Unload(entPtr->tex_ID);
+            entPtr->tex_ID = 0;
+        }
+    }
+
+    // Clear current scene
+    m_entities.clear();
+    m_currentEntityIndex = 0;
+    m_selectedEntityIndex = -1;
+
+    // Read entities array
+    if (!root.contains("entities") || !root["entities"].is_array()) {
+        LOG_WARNING("Engine::LoadScene: no entities array in scene file");
+        return true; // nothing to recreate
+    }
+
+    for (const auto& je : root["entities"]) {
+        // Read data with safe defaults
+        std::string name = je.value("name", std::string("entity"));
+        int id = je.value("id", 0);
+        // int typeId = je.value("typeId", 0); // not used for now
+
+        glm::vec3 pos(0.0f), rot(0.0f), scl(1.0f);
+        if (je.contains("position") && je["position"].is_array() && je["position"].size() >= 3) {
+            pos.x = je["position"][0].get<float>();
+            pos.y = je["position"][1].get<float>();
+            pos.z = je["position"][2].get<float>();
+        }
+        if (je.contains("rotation") && je["rotation"].is_array() && je["rotation"].size() >= 3) {
+            rot.x = je["rotation"][0].get<float>();
+            rot.y = je["rotation"][1].get<float>();
+            rot.z = je["rotation"][2].get<float>();
+        }
+        if (je.contains("scale") && je["scale"].is_array() && je["scale"].size() >= 3) {
+            scl.x = je["scale"][0].get<float>();
+            scl.y = je["scale"][1].get<float>();
+            scl.z = je["scale"][2].get<float>();
+        }
+
+        std::string texPath;
+        if (je.contains("texPath") && je["texPath"].is_string()) {
+            texPath = je["texPath"].get<std::string>();
+        }
+
+        // For this minimal loader, create a cube for each saved entity (you can expand later)
+        AddCube(pos); // creates and selects a new cube, sets m_selectedEntityIndex
+
+        if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+            GameObj* newObj = m_entities[m_selectedEntityIndex].get();
+            if (newObj) {
+                // restore transform and name/id
+                newObj->position = pos;
+                newObj->rotation = rot;
+                newObj->scale = scl;
+                // recompute modelMatrix (same logic as inspector)
+                newObj->modelMatrix = glm::translate(glm::mat4(1.0f), newObj->position);
+                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.x, glm::vec3(1, 0, 0));
+                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.y, glm::vec3(0, 1, 0));
+                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.z, glm::vec3(0, 0, 1));
+                newObj->modelMatrix = glm::scale(newObj->modelMatrix, newObj->scale);
+
+                newObj->entName = name;
+                newObj->entId = id;
+
+                // apply texture if present (this loads full-resolution texture)
+                if (!texPath.empty()) {
+                    if (!m_entity->SetTextureForGameObj(newObj, texPath)) {
+                        LOG_WARNING("Engine::LoadScene: failed to apply texture " << texPath << " to entity " << id);
+                    }
+                    else {
+                        LOG_INFO("Engine::LoadScene: applied texture " << texPath << " to entity " << id);
+                    }
+                }
+            }
+        }
+    }
+
+    // After loading, clear selection
+    m_selectedEntityIndex = -1;
+    LOG_INFO("Engine::LoadScene: finished loading scene from " << path);
     return true;
 }
 
@@ -246,6 +363,28 @@ bool Engine::Initialize(const EngineConfig& config) {
             return;
         }
 
+        const std::string loadPrefix = "LoadScene";
+        if (cmd.rfind(loadPrefix, 0) == 0) {
+            std::string payload = cmd.substr(loadPrefix.size());
+            // trim whitespace
+            auto trim = [](std::string& s) {
+                while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
+                while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
+            };
+            trim(payload);
+            if (payload.empty()) {
+                LOG_WARNING("Engine: LoadScene command received but no path provided");
+                return;
+            }
+            if (!LoadScene(payload)) {
+                LOG_WARNING("Engine: LoadScene failed for " << payload);
+            }
+            else {
+                LOG_INFO("Engine: Loaded scene " << payload);
+            }
+            return;
+        }
+
 
 
 
@@ -293,6 +432,62 @@ bool Engine::Initialize(const EngineConfig& config) {
                 LOG_INFO("Engine: AddObj cancelled or no file selected");
             }
         }
+
+		//##################################################### Add Texture command handling (UI -> Engine) ###################################
+        const std::string texPrefix = "AddTexture:";
+        if (cmd.rfind(texPrefix, 0) == 0) { // starts_with
+            std::string payload = cmd.substr(texPrefix.size());
+            // trim whitespace
+            auto trim = [](std::string& s) {
+                while (!s.empty() && isspace((unsigned char)s.front())) s.erase(s.begin());
+                while (!s.empty() && isspace((unsigned char)s.back())) s.pop_back();
+            };
+            trim(payload);
+            if (payload.empty()) {
+                LOG_WARNING("Engine: AddTexture command received but no path provided");
+                return;
+            }
+
+            LOG_INFO("Engine: AddTexture command received with path: " << payload);
+
+            // If there is a selected entity, apply the texture to it
+            if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                GameObj* sel = m_entities[m_selectedEntityIndex].get();
+                if (sel && m_entity) {
+                    if (!m_entity->SetTextureForGameObj(sel, payload)) {
+                        LOG_WARNING("Engine: Failed to apply texture to selected entity: " << payload);
+                    }
+                    else {
+                        LOG_INFO("Engine: Applied texture to entity " << sel->entId << " -> " << payload);
+                    }
+                }
+                return; // handled
+            }
+
+            // No selection: create a new plane (or cube) and apply the texture to it
+            if (m_entity) {
+                // This will create a Floor (or call AddPlane/AddCube if you prefer)
+                AddPlane(glm::vec3(0.0f)); // creates and selects new plane
+                if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                    GameObj* newObj = m_entities[m_selectedEntityIndex].get();
+                    if (newObj) {
+                        if (!m_entity->SetTextureForGameObj(newObj, payload)) {
+                            LOG_WARNING("Engine: Failed to apply texture to new entity: " << payload);
+                        }
+                        else {
+                            LOG_INFO("Engine: Created new entity and applied texture: " << payload);
+                        }
+                    }
+                }
+            }
+            else {
+                LOG_WARNING("Engine: no entity manager available to add/apply texture");
+            }
+
+            return; // handled
+        }
+        
+        //##################################################### End Texture ###########################################
 
         // ---- Handle "AddSkyBox:<path>" without creating duplicates ----
         const std::string prefix = "AddSkyBox:";
@@ -473,9 +668,7 @@ void Engine::Run() {
             
             // ############################## End Score board ################################
 
-            // ############################## Asset Manager ################################
-
-            // ############################## End Asset Manager ################################
+   
            
             // ############################## object editor ################################
            
@@ -544,7 +737,7 @@ void Engine::Run() {
                             // toggling visible will affect rendering next frame
                         }
 
-                        ImGui::SeparatorText("Texture");
+                        ImGui::SeparatorText("Texture on selected object");
 
                         // show path or "None"
                         if (!selected->texPath.empty()) {
@@ -813,32 +1006,6 @@ void Engine::AddFloor(const glm::vec3& pos)
 	m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
 	ImGui::SetWindowFocus("Object Inspector"); // this will need work for terrain
 }
-
-
-
-// ###################################### Skybox addition ######################################
-//void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
-//void Engine::AddSkyBox(const std::string& folderPath, const glm::vec3& pos)
-//
-//{
-//    if (!m_entity) return;
-//    if (folderPath.empty()) return;
-//
-//    m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, folderPath, pos);
-//
-//    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
-//    ImGui::SetWindowFocus("Object Inspector");
-//    LOG_INFO("Engine: Added object from file " << folderPath << " at pos (" << pos.x << "," << pos.y << "," << pos.z << ")");
-//}
-
-
-
-
-
-
-
-
-// ###################################### End Skybox addition ######################################
 
 
 static glm::vec3 ClampPointToAABB(const glm::vec3& p, const glm::vec3& minB, const glm::vec3& maxB) {

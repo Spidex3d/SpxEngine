@@ -30,8 +30,16 @@
 int SpxWindow::s_glfwRefCount = 0;
 
 
-// Frees a vector<TexTexture> using TextureManager so refcounts are decremented.
 
+
+// small helper to destroy existing framebuffer resources
+static void DestroyFBO(GLuint& fbo, GLuint& color, GLuint& depth) {
+    if (depth) { glDeleteRenderbuffers(1, &depth); depth = 0; }
+    if (color) { glDeleteTextures(1, &color); color = 0; }
+    if (fbo) { glDeleteFramebuffers(1, &fbo); fbo = 0; }
+}
+
+// Frees a vector<TexTexture> using TextureManager so refcounts are decremented.
 static void FreeTexTextureList(std::vector<TexTexture>& list) {
     for (auto& t : list) {
         if (!t.path.empty()) {
@@ -44,13 +52,6 @@ static void FreeTexTextureList(std::vector<TexTexture>& list) {
         t.TexFaceTexID = 0;
     }
     list.clear();
-}
-
-// small helper to destroy existing framebuffer resources
-static void DestroyFBO(GLuint& fbo, GLuint& color, GLuint& depth) {
-    if (depth) { glDeleteRenderbuffers(1, &depth); depth = 0; }
-    if (color) { glDeleteTextures(1, &color); color = 0; }
-    if (fbo) { glDeleteFramebuffers(1, &fbo); fbo = 0; }
 }
 
 // Framebuffer size callback to handle window resizing events
@@ -462,6 +463,10 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         }
         if (ImGui::MenuItem("Open scene"))
         {
+            std::string picked = openFileDialog();
+            if (!picked.empty()) {
+                if (m_actionCallback) m_actionCallback(std::string("LoadScene") + picked);
+            }
 
         }
         ImGui::Separator();
@@ -767,7 +772,8 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     void SpxWindow::AssetBrowser(GLFWwindow* window)
     {
 
-        static std::vector<TexTexture> texTexture;
+        //static std::vector<TexTexture> texTexture; ! not needed here
+        //static std::vector<TexTexture> m_Texture;
 
         ImGui::Begin(ICON_FA_EDIT " Asset Browser");
         if (ImGui::BeginTabBar("##MainEnviro", ImGuiTabBarFlags_None))
@@ -797,20 +803,21 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
                 ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
 
-                ImGui::Text("ID: Texture Lab");
-                ImGui::Text("Spidex Engine New Texture Lab", nullptr);
-                
+                ImGui::Text("Spidex Engine New Texture Lab", nullptr);                
 
                 if (ImGui::Button("Open Texture")) {
                  std::string picked = openFolderDialog();
                     if (!picked.empty()) {
                         // Free previously cached previews to avoid leaks (must be called with GL context)
-                        FreeTexTextureList(texTexture);
+                        //FreeTexTextureList(texTexture);
+                        FreeTexTextureList(m_texTextures);
 
                         // Load new previews (this will create GL textures and return vector)
-                        texTexture = TextureManager::LoadTexturesFromDirectory(picked);
+                       // texTexture = TextureManager::LoadTexturesFromDirectory(picked);
+                        m_texTextures = TextureManager::LoadTexturesFromDirectory(picked);
 
-                        LOG_INFO("AssetBrowser: loaded " << texTexture.size() << " textures from " << picked);
+                       // LOG_INFO("AssetBrowser: loaded " << texTexture.size() << " textures from " << picked);
+                        LOG_INFO("AssetBrowser: loaded " << m_texTextures.size() << " textures from " << picked);
                     }
                     else {
                         LOG_INFO("AssetBrowser: openFolderDialog cancelled or no folder selected");
@@ -828,14 +835,15 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 int count = 0;
                 const ImVec2 previewSize(32, 32);
 
-                for (const auto& st : texTexture) {
+                //for (const auto& st : texTexture) {
+                for (const auto& st : m_texTextures) {
                     ImGui::PushID((int)st.id);
 
                     if (st.TexFaceTexID != 0) {
                         if (ImGui::ImageButton((void*)(intptr_t)st.TexFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0))) {
-                            // Apply texture to selected object
+                            // Send AddTexture action to Engine with the file path
                             if (m_actionCallback) {
-                                m_actionCallback(std::string("SetTexture:") + st.path);
+                                m_actionCallback(std::string("AddTexture:") + st.path);
                             }
                         }
                     }

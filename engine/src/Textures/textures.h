@@ -19,6 +19,9 @@ struct TexTexture {
         // Load texture from disk (path). Returns 0 on failure, otherwise GL texture id.
         GLuint Load(const std::string& path);
 
+        GLuint LoadPreview(const std::string& path, int maxSide = 256);
+        
+
         std::vector<TexTexture> LoadTexturesFromDirectory(const std::string& texFolderPath);
 
         // Optional: query without loading

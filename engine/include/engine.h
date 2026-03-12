@@ -34,8 +34,9 @@ public:
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
 
-    // ######################### save scene ##########################################
+    // ######################### save / load scene ##########################################
     bool SaveScene(const std::string& path);
+    bool LoadScene(const std::string& path);
 
     bool Initialize(const EngineConfig& config);
     void Run();

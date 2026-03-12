@@ -201,6 +201,8 @@
     <ClInclude Include="vendors\json\json.hpp" />
     <ClInclude Include="vendors\stb\stb_image.h" />
     <ClInclude Include="vendors\stb\stb_image2.h" />
+    <ClInclude Include="vendors\stb\stb_image_resize.h" />
+    <ClInclude Include="vendors\stb\stb_image_write.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\engine.lib" />
