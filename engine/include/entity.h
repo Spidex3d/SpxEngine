@@ -37,9 +37,10 @@ struct GameObj { // Any game object not player-related
         isCollidable(true),
         isVisible(true),
         tex_ID(0),
-        texPath("")
-    {
-    }
+        texPath(""),
+        //entType(""),
+		assetPath("")
+    {    }
 
     int entId;          // individual entity ID
     int entTypeID;      // type of entity ie; plane, cube, npc, pickup etc
@@ -65,6 +66,8 @@ struct GameObj { // Any game object not player-related
     // used for complex models that have their own materials/textures (like gltf/obj models) but can be applied to them as a single texture
     // if desired (e.g. for quick testing or if the model is untextured)
     
+    //std::string entType;    // e.g. "Cube", "Plane", "Floor", "Obj", "Gltf", "Skybox"
+    std::string assetPath;  // optional: path to model  "Obj", "Gltf", "Skybox" file used to create this entity
 
 };
 

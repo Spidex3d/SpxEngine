@@ -680,6 +680,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                         if (!cached) {
                             //cachedSkies.clear();
                             skyTexture.clear();
+                            
 
                             // Create a small temporary loader object to reuse your load function.
                             LoadSkybox tmpLoader(0, "tmp", 0);

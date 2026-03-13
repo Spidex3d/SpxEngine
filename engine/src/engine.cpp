@@ -88,6 +88,11 @@ bool Engine::SaveScene(const std::string& path)
             out << "      \"texPath\": \"" << JsonEscape(entPtr->texPath) << "\",\n";
         }
 
+		// If this entity has an asset path (e.g. for models or skyboxes), write it (escape)
+        if (!entPtr->assetPath.empty()) {
+            out << "      \"assetPath\": \"" << JsonEscape(entPtr->assetPath) << "\",\n";
+        }
+
         out << "      \"position\": [" << pos.x << ", " << pos.y << ", " << pos.z << "],\n";
         out << "      \"rotation\": [" << rot.x << ", " << rot.y << ", " << rot.z << "],\n";
         out << "      \"scale\": [" << scl.x << ", " << scl.y << ", " << scl.z << "]\n";
@@ -176,38 +181,101 @@ bool Engine::LoadScene(const std::string& path)
         if (je.contains("texPath") && je["texPath"].is_string()) {
             texPath = je["texPath"].get<std::string>();
         }
+        // ############################################################# New Bit ###################################
+       // std::string type = je.value("typeId", std::string("GameObj"));
+		int typeId = je.value("typeId", 0);
+        std::string asset = je.value("assetPath", std::string());
 
-        // For this minimal loader, create a cube for each saved entity (you can expand later)
-        AddCube(pos); // creates and selects a new cube, sets m_selectedEntityIndex
-
-        if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
-            GameObj* newObj = m_entities[m_selectedEntityIndex].get();
-            if (newObj) {
-                // restore transform and name/id
-                newObj->position = pos;
-                newObj->rotation = rot;
-                newObj->scale = scl;
-                // recompute modelMatrix (same logic as inspector)
-                newObj->modelMatrix = glm::translate(glm::mat4(1.0f), newObj->position);
-                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.x, glm::vec3(1, 0, 0));
-                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.y, glm::vec3(0, 1, 0));
-                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.z, glm::vec3(0, 0, 1));
-                newObj->modelMatrix = glm::scale(newObj->modelMatrix, newObj->scale);
-
-                newObj->entName = name;
-                newObj->entId = id;
-
-                // apply texture if present (this loads full-resolution texture)
-                if (!texPath.empty()) {
-                    if (!m_entity->SetTextureForGameObj(newObj, texPath)) {
-                        LOG_WARNING("Engine::LoadScene: failed to apply texture " << texPath << " to entity " << id);
-                    }
-                    else {
-                        LOG_INFO("Engine::LoadScene: applied texture " << texPath << " to entity " << id);
+        // create appropriate entity based on type
+        if (typeId == OBJ_CUBE) {
+            AddCube(pos);
+        }
+        else if (typeId == OBJ_PLANE) {
+            AddPlane(pos);
+        }
+        else if (typeId == OBJ_FLOOR) {
+            AddFloor(pos);
+        }
+        else if (typeId == OBJ_OBJ_MODEL) {
+            // create object from file using Entity helper (does not change selection behavior)
+            if (m_entity) {
+                m_entity->CreateObjFromFile(m_entities, m_currentEntityIndex, m_modelObjIdx, asset, pos);
+                m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                // set type/assetPath on created object
+                if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                    GameObj* g = m_entities[m_selectedEntityIndex].get();
+                    if (g) {
+                        g->entTypeID = OBJ_OBJ_MODEL;
+                        g->assetPath = asset;
                     }
                 }
             }
         }
+        else if (typeId == GLTF_OBJ_MODEL) {
+            if (m_entity) {
+                m_entity->CreateGltfFromFile(m_entities, m_currentEntityIndex, m_modelGltfIdx, asset, pos);
+                m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                    GameObj* g = m_entities[m_selectedEntityIndex].get();
+                    if (g) {
+                        g->entTypeID = GLTF_OBJ_MODEL;
+                        g->assetPath = asset;
+                    }
+                }
+            }
+        }
+        else if (typeId == SKY_OBJ) {
+            if (m_entity) {
+                m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, asset, glm::vec3(0.0f));
+                m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                    GameObj* g = m_entities[m_selectedEntityIndex].get();
+                    if (g) {
+                        g->entTypeID = SKY_OBJ;
+                        g->assetPath = asset;
+                    }
+                }
+            }
+        }
+        else {
+            // fallback: create a cube so you can inspect the saved transform
+            AddCube(pos);
+        }
+
+
+
+
+        // For this minimal loader, create a cube for each saved entity (you can expand later)
+        //AddCube(pos); // creates and selects a new cube, sets m_selectedEntityIndex
+
+        //if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+        //    GameObj* newObj = m_entities[m_selectedEntityIndex].get();
+        //    if (newObj) {
+        //        // restore transform and name/id
+        //        newObj->position = pos;
+        //        newObj->rotation = rot;
+        //        newObj->scale = scl;
+        //        // recompute modelMatrix (same logic as inspector)
+        //        newObj->modelMatrix = glm::translate(glm::mat4(1.0f), newObj->position);
+        //        newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.x, glm::vec3(1, 0, 0));
+        //        newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.y, glm::vec3(0, 1, 0));
+        //        newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.z, glm::vec3(0, 0, 1));
+        //        newObj->modelMatrix = glm::scale(newObj->modelMatrix, newObj->scale);
+
+        //        newObj->entName = name;
+        //        newObj->entId = id;
+
+        //        // apply texture if present (this loads full-resolution texture)
+        //        if (!texPath.empty()) {
+        //            if (!m_entity->SetTextureForGameObj(newObj, texPath)) {
+        //                LOG_WARNING("Engine::LoadScene: failed to apply texture " << texPath << " to entity " << id);
+        //            }
+        //            else {
+        //                LOG_INFO("Engine::LoadScene: applied texture " << texPath << " to entity " << id);
+        //            }
+        //        }
+        //    }
+        //}
     }
 
     // After loading, clear selection
@@ -306,6 +374,7 @@ bool Engine::Initialize(const EngineConfig& config) {
 
         
     window->SetRenderCallback([this]() {
+
         int fbw = window->GetFramebufferWidth();
         int fbh = window->GetFramebufferHeight();
         if (fbw <= 0 || fbh <= 0) return;
@@ -321,18 +390,69 @@ bool Engine::Initialize(const EngineConfig& config) {
             selectedEntityId = m_entities[m_selectedEntityIndex]->entId;
         }
 
+        // ---- NEW: rotate objects that have rotateY enabled ----
+        //const float TWO_PI = 6.28318530717958647692f;
+        //const float DEFAULT_ROT_SPEED_DEG = 45.0f; // degrees per second
+        const float rotSpeed = glm::radians(DEFAULT_ROT_SPEED_DEG); // radians per second
+
+        // Update rotating objects before rendering so the change is visible immediately
+        for (auto& uptr : m_entities) {
+            if (!uptr) continue;
+            if (!uptr->rotateY) continue;
+
+            // increment rotation.y (rotation is stored in radians)
+            uptr->rotation.y += rotSpeed * m_frameDt;
+            // wrap to avoid growth
+            if (uptr->rotation.y > TWO_PI) uptr->rotation.y -= TWO_PI;
+            else if (uptr->rotation.y < -TWO_PI) uptr->rotation.y += TWO_PI;
+
+            // rebuild modelMatrix using the same TRS order your inspector uses:
+            uptr->modelMatrix = glm::translate(glm::mat4(1.0f), uptr->position);
+            uptr->modelMatrix = glm::rotate(uptr->modelMatrix, uptr->rotation.x, glm::vec3(1, 0, 0));
+            uptr->modelMatrix = glm::rotate(uptr->modelMatrix, uptr->rotation.y, glm::vec3(0, 1, 0));
+            uptr->modelMatrix = glm::rotate(uptr->modelMatrix, uptr->rotation.z, glm::vec3(0, 0, 1));
+            uptr->modelMatrix = glm::scale(uptr->modelMatrix, uptr->scale);
+        }
+        // ---- end rotation update ----
+
         if (m_entity) {
             // Add a sky box
             m_entity->RenderSkyBox(m_skyShader, view, projection, m_entities, m_currentEntityIndex, m_skyIdx, selectedEntityId);
-            // render cubes and planes (updated signatures with selectedEntityId)
-			m_entity->RenderGltfModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
-			m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
+            // render other objects...
+            m_entity->RenderGltfModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
+            m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
             m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
             m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
             m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
-        
-        
         }
+
+   //     int fbw = window->GetFramebufferWidth();
+   //     int fbh = window->GetFramebufferHeight();
+   //     if (fbw <= 0 || fbh <= 0) return;
+
+   //     float aspect = (fbh > 0) ? static_cast<float>(fbw) / static_cast<float>(fbh) : 1.0f;
+
+   //     glm::mat4 view = m_camera.GetViewMatrix();
+   //     glm::mat4 projection = m_camera.GetProjectionMatrix(aspect);
+
+   //     // compute selected entity id (or -1 if none)
+   //     int selectedEntityId = -1;
+   //     if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+   //         selectedEntityId = m_entities[m_selectedEntityIndex]->entId;
+   //     }
+
+   //     if (m_entity) {
+   //         // Add a sky box
+   //         m_entity->RenderSkyBox(m_skyShader, view, projection, m_entities, m_currentEntityIndex, m_skyIdx, selectedEntityId);
+   //         // render cubes and planes (updated signatures with selectedEntityId)
+			//m_entity->RenderGltfModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
+			//m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
+   //         m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
+   //         m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
+   //         m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
+   //     
+   //     
+   //     }
 
 
     });
@@ -465,24 +585,24 @@ bool Engine::Initialize(const EngineConfig& config) {
             }
 
             // No selection: create a new plane (or cube) and apply the texture to it
-            if (m_entity) {
-                // This will create a Floor (or call AddPlane/AddCube if you prefer)
-                AddPlane(glm::vec3(0.0f)); // creates and selects new plane
-                if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
-                    GameObj* newObj = m_entities[m_selectedEntityIndex].get();
-                    if (newObj) {
-                        if (!m_entity->SetTextureForGameObj(newObj, payload)) {
-                            LOG_WARNING("Engine: Failed to apply texture to new entity: " << payload);
-                        }
-                        else {
-                            LOG_INFO("Engine: Created new entity and applied texture: " << payload);
-                        }
-                    }
-                }
-            }
-            else {
-                LOG_WARNING("Engine: no entity manager available to add/apply texture");
-            }
+            //if (m_entity) {
+            //    // This will create a Floor (or call AddPlane/AddCube if you prefer)
+            //    AddPlane(glm::vec3(0.0f)); // creates and selects new plane
+            //    if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+            //        GameObj* newObj = m_entities[m_selectedEntityIndex].get();
+            //        if (newObj) {
+            //            if (!m_entity->SetTextureForGameObj(newObj, payload)) {
+            //                LOG_WARNING("Engine: Failed to apply texture to new entity: " << payload);
+            //            }
+            //            else {
+            //                LOG_INFO("Engine: Created new entity and applied texture: " << payload);
+            //            }
+            //        }
+            //    }
+            //}
+            //else {
+            //    LOG_WARNING("Engine: no entity manager available to add/apply texture");
+            //}
 
             return; // handled
         }
@@ -516,9 +636,11 @@ bool Engine::Initialize(const EngineConfig& config) {
                     LOG_INFO("Engine: updating existing skybox (entity %d) with %s", sky->entId, pathToLoad.c_str());
                     // Make sure LoadFromFolder accepts a file path too (it should). It should also free previous textures.
                     if (!sky->LoadFromFolder(pathToLoad)) {
-                        LOG_WARNING("Engine: LoadFromFolder failed for %s (existing sky not replaced).", pathToLoad.c_str());
+                        LOG_WARNING("Engine: LoadFromFolder failed for %s (existing sky not replaced)." << pathToLoad.c_str());
                     }
                     else {
+                        // update a saved scene
+                        sky->assetPath = pathToLoad;
                         // mark selection to this skybox
                         m_selectedEntityIndex = i;
                         ImGui::SetWindowFocus("Object Inspector");
@@ -655,6 +777,8 @@ void Engine::Run() {
         m_lastTime = now;
         float dt = delta.count();
 
+		m_frameDt = dt; // rotating objects use this to rotate at a consistent speed regardless of frame rate
+
         // 2) Start ImGui frame (only if enabled)
         if (m_config.enableImGui) {
             window->NewImguiFrame(glfwwindow);
@@ -724,6 +848,7 @@ void Engine::Run() {
                         if (ImGui::Checkbox("Active", &selected->isActive)) { /* optionally handle enable/disable */ }
 						if (ImGui::Checkbox("Rotate Y", &selected->rotateY)) {
 							// toggling rotateY will cause the object to start/stop rotating in the render loop
+							selected->rotateY = selected->rotateY; // just to emphasize the change happens immediately
 						}
                         if (ImGui::Checkbox("Health Pack", &selected->isHealthPack)) {
                             // show health points input only if flagged

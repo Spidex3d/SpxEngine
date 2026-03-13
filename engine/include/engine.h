@@ -109,6 +109,7 @@ private:
     bool m_running = false; // main loop flag
     std::chrono::steady_clock::time_point m_lastTime;
     // add other managers/systems as direct members here
+    float m_frameDt = 0.0f; // delta time in seconds for current frame (used by render callback)
 };
 
 

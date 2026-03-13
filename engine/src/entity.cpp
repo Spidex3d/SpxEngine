@@ -74,7 +74,8 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
         // still can push sky (empty) if you want; here we abort
         return;
     }
-
+    // this where we need to set assetPath
+    sky->assetPath = folderPath; // store the path in the loader for reference (not used at runtime after loading)
     // set transform
     sky->position = position;
     sky->modelMatrix = glm::translate(glm::mat4(1.0f), sky->position);
@@ -174,6 +175,11 @@ void Entity::CreateGltfFromFile(std::vector<std::unique_ptr<GameObj>>& entVector
 
     // Try to load (LoadGLTF returns bool)
     bool ok = loader->LoadGLTF(modelPath, binPath);
+
+    // this is where we need to set assetPath
+    loader->assetPath = modelPath, binPath; // store the path in the loader for reference (not used at runtime after loading)
+
+
     if (!ok || !loader->IsLoaded()) {
         LOG_WARNING("CreateGltfFromFile: gltf loader failed for " << modelPath << " - adding fallback cube");
 
@@ -279,53 +285,6 @@ void Entity::RenderGltfModel(Shader* shader, const glm::mat4& view, const glm::m
     // reset selection uniform (optional)
     shader->SetUniformInt("u_selected", 0);
 
-
-    //if (!shader) {
-    //    LOG_WARNING("Entity::RenderGltfModel called without shader; skipping draw.");
-    //    return;
-    //}
-
-    //// Setup shared shader uniforms (projection/view etc.)
-    //loadShader(shader, view, projection);
-
-    //for (const auto& model : entVector) {
-    //    if (!model) continue;
-    //    if (!model->isVisible) continue;
-
-    //    if (auto* gltfModel = dynamic_cast<gltf*>(model.get())) {
-    //        // Model matrix
-    //        shader->setMat4("model", gltfModel->modelMatrix);
-
-    //        // Selection highlight
-    //        int isSelected = (gltfModel->entId == selectedEntityId) ? 1 : 0;
-    //        shader->SetUniformInt("u_selected", isSelected);
-    //        shader->setVec3("u_highlightColor", glm::vec3(0.2f, 0.2f, 0.8f));
-
-    //        // Decide whether the model has a baseColor / diffuse texture (simple heuristic)
-    //        bool hasTex = false;
-    //        for (const auto& sub : gltfModel->m_mesh.submeshes) {
-    //            // sub.textures is a map<string, GLuint> in your gltf::SubMesh
-    //            auto it = sub.textures.find("baseColor");
-    //            if (it != sub.textures.end() && it->second != 0) { hasTex = true; break; }
-    //        }
-    //        shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
-
-    //        // Set fallback albedo if no texture
-    //        if (!hasTex) {
-    //            shader->setVec3("u_albedo", glm::vec3(1.0f));
-    //        }
-
-    //        // Draw the glTF model (your gltf::DrawGltf binds textures and issues draw calls per-submesh)
-    //        gltfModel->DrawGltf();
-
-    //        // Optionally reset bound textures (DrawGltf unbinds textures itself, but to be safe)
-    //        glActiveTexture(GL_TEXTURE0);
-    //        glBindTexture(GL_TEXTURE_2D, 0);
-    //    }
-    //}
-
-    //// reset selection uniform (optional)
-    //shader->SetUniformInt("u_selected", 0);
 }
 
 
@@ -350,6 +309,12 @@ void Entity::CreateObjFromFile(std::vector<std::unique_ptr<GameObj>>& entVector,
 
     // Try to load the OBJ file
     bool ok = loader->Loadobj(modelPath);
+
+    // this where we need to set assetPath
+	loader->assetPath = modelPath; // store the path in the loader for reference (not used at runtime after loading)
+
+
+
     if (!ok) {
         LOG_WARNING("CreateObjFromFile: objLoader failed to load " << modelPath << " - adding fallback cube");
         // Fallback: create a CubeModel so something appears
@@ -437,28 +402,7 @@ void Entity::CreateCube(std::vector<std::unique_ptr<GameObj>>& entVector, int& c
 
     newCube->position = position;
     newCube->scale = glm::vec3(1.0f);
-
-    switch (CubeObjIdx) {
-    case 0:
-        newCube->position = glm::vec3(0.0f, 0.0f, 0.0f);
-        newCube->scale = glm::vec3(1.0f, 1.0f, 1.0f);
-
-        break;
-    case 1:
-        newCube->position = glm::vec3(1.1f, 0.0f, 0.0f);
-        newCube->scale = glm::vec3(1.0f, 1.0f, 1.0f);
-        break;
-
-    case 2:
-        newCube->position = glm::vec3(-1.0f, -0.5f, 0.0f);
-        newCube->scale = glm::vec3(0.5f, 0.5f, 0.5f);
-        break;
-    default:
-        newCube->position = glm::vec3(2.0f, 2.0f, 0.0f);
-        newCube->scale = glm::vec3(1.0f, 1.0f, 1.0f);
-        //posx += 1.5;
-        break;
-    }
+    
 
     // Build TRS: translate * rotate * scale (no rotation here)
     newCube->modelMatrix = glm::translate(glm::mat4(1.0f), newCube->position);
@@ -542,28 +486,6 @@ void Entity::CreatePlane(std::vector<std::unique_ptr<GameObj>>& entVector, int& 
 
     newPlane->position = position;
     newPlane->scale = glm::vec3(1.0f);
-
-    switch (PlaneObjIdx) {
-    case 0:
-        newPlane->position = glm::vec3(0.0f, 0.0f, 0.0f);
-        newPlane->scale = glm::vec3(1.0f, 1.0f, 1.0f);
-
-        break;
-    case 1:
-        newPlane->position = glm::vec3(1.1f, 0.0f, 0.0f);
-        newPlane->scale = glm::vec3(1.0f, 1.0f, 0.5f);
-        break;
-
-    case 2:
-        newPlane->position = glm::vec3(1.0f, 1.5f, 0.0f);
-        newPlane->scale = glm::vec3(0.5f, 0.5f, 0.5f);
-        break;
-    default:
-        newPlane->position = glm::vec3(2.0f, 2.0f, 0.0f);
-        newPlane->scale = glm::vec3(1.0f, 1.0f, 1.0f);
-        //posx += 1.5;
-        break;
-    }
 
     // Build TRS: translate * rotate * scale (no rotation here)
     newPlane->modelMatrix = glm::translate(glm::mat4(1.0f), newPlane->position);

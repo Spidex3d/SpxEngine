@@ -1,6 +1,7 @@
 #include "../include/globalVar.h"
 
-
+const float TWO_PI = 6.28318530717958647692f;
+const float DEFAULT_ROT_SPEED_DEG = 45.0f; // degrees per second
 
 bool ShouldAddSkyBox = false;
 bool ShouldAddTextures = false;

@@ -2,6 +2,9 @@
 #include <vector>
 #include <string>
 
+extern const float TWO_PI; // useful for rotation wrapping; define in globalVar.cpp as 6.28318530717958647692f for precision
+extern const float DEFAULT_ROT_SPEED_DEG; // degrees per second for rotation of objects with rotateY enabled
+
 constexpr const char* TEXTURE_PATH = "assets/textures/texture/";
 constexpr const char* SHADER_PATH = "Shaders/";
 
