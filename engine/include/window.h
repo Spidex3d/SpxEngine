@@ -169,6 +169,10 @@ constexpr const char* ROBOTO_REG_PATH = "assets/fonts/Roboto-Regular.ttf";
 constexpr const char* FA_REG_PATH = "assets/fonts/FA-Regular-400.otf";
 constexpr const char* FA_SOLID_PATH = "assets/fonts/FA-Solid-900.otf";
 
+const float MY_FONT_SIZE = 18.0f; // my font
+constexpr const char* MY_SOLID_PATH = "assets/fonts/MyIconDemo.ttf"; // my fonts
+
+
 
 
 

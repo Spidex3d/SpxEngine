@@ -188,6 +188,7 @@
     <ClInclude Include="src\Model_loaders\objLoader.h" />
     <ClInclude Include="src\Sky\skyBox.h" />
     <ClInclude Include="src\Ui\icon_loader.h" />
+    <ClInclude Include="vendors\fonts\fonts.h" />
     <ClInclude Include="vendors\imgui\imconfig.h" />
     <ClInclude Include="vendors\imgui\imgui.h" />
     <ClInclude Include="vendors\imgui\ImGuiAF.h" />

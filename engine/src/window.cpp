@@ -9,6 +9,8 @@
 #include <imgui\imgui_impl_opengl3.h>
 #include <imgui\ImGuiAF.h>
 
+#include "fonts\fonts.h"
+
 #include "stb/stb_image.h"
 #include "../include/asset_path.h" // for GetAssetPath
 #include "../include/globalVar.h"
@@ -135,14 +137,21 @@ void SpxWindow::SetUpImGui(GLFWwindow* window) {
     fontconfig.PixelSnapH = true;
     static const ImWchar ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
-    
 
     fontconfig.GlyphOffset = ImVec2(0.0f, 1.0f);
     std::string fontPath = GetAssetPath(FONT_PATH_MAIN_REL);
     io.Fonts->AddFontFromFileTTF(fontPath.c_str(), FONT_SIZE);
 
-	std::string AFfontPath  = GetAssetPath(FA_SOLID_PATH).c_str();
+	std::string AFfontPath  = GetAssetPath(FA_SOLID_PATH);
     io.Fonts->AddFontFromFileTTF(AFfontPath.c_str(), FONT_SIZE, &fontconfig, ranges);
+
+	// #################################################### my fonts and icons #####################################################
+	std::string MYfontPath = GetAssetPath(MY_SOLID_PATH);
+    static const ImWchar icon_ranges[] = { ICON_MIN_MY, ICON_MAX_MY, 0 }; 
+    ImFontConfig cfg;
+    cfg.MergeMode = true;
+    cfg.PixelSnapH = true;
+    io.Fonts->AddFontFromFileTTF(MYfontPath.c_str(), 18.0f, &cfg, icon_ranges);
 }
 
 void SpxWindow::NewImguiFrame(GLFWwindow* window)
@@ -631,12 +640,20 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             }
             if (ImGui::BeginTabItem("Help Lab"))
             {
-                ImGui::Text("Help doc's");
-                ImGui::Text("Spidex Engine New Help doc's", nullptr);
+                ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.5f, 1.0f), ICON_FA_AMBULANCE " Help doc's");
+                ImGui::Text("SpxEngine New Help doc's", nullptr);
                 ImGui::Text("To reset Camera from topCam press back Cam then Reset Cam", nullptr);
-                /*ImGui::InputTextMultiline("##help", m_helpBuffer, sizeof(m_helpBuffer), ImVec2(-FLT_MIN,
-                    ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
-                */
+                ImGui::TextWrapped("Models Created/distributed by Kay Lousberg"
+                    "www.kaylousberg.com Creation date : 22 / 10 / 2025 09  ", nullptr);
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SpxEngine");
+                ImGui::SeparatorText(" Info ");
+                ImGui::TextWrapped("Hi I'm The Dyslexic Programmer.I'm not really a programmer, I'm a retired horticulturist."
+                    "iv only played with C++ and found it very interesting,"
+                    "so now I have lots of time to try and learn this stuff."
+                    "my aim is to go from all but zero to making a 3d Model Editor using Opengl."
+                );
+                ImGui::SeparatorText( " GitHub ");
+                ImGui::Text("https://github.com/Spidex3d/SpxEngine");
                 ImGui::EndTabItem();
             }
 
@@ -782,7 +799,14 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             {
                 // TO DO Later
                 // Dispaly types of Levels to set up ie: Blank, default, FPS, Top Down, ect; we can use as image buttons
-
+                
+              // ImGui::Button((std::string(ICON_MY_LOAD) + " Load").c_str());
+                ImGui::Button(ICON_MY_ADD_NEW   " Add New");
+                ImGui::Button(ICON_MY_REMOVE    " Remove");
+                ImGui::Button(ICON_MY_LOAD      " Load");
+                ImGui::Button(ICON_MY_SAVE      " Save");
+                ImGui::Button(ICON_MY_SKY       " Sky");
+                ImGui::Button(ICON_MY_TERRAIN   " Terrain");
 
                 ImGui::EndTabItem();
             } // End Level Lab

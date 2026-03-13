@@ -391,8 +391,7 @@ bool Engine::Initialize(const EngineConfig& config) {
         }
 
         // ---- NEW: rotate objects that have rotateY enabled ----
-        //const float TWO_PI = 6.28318530717958647692f;
-        //const float DEFAULT_ROT_SPEED_DEG = 45.0f; // degrees per second
+        // DEFAULT_ROT_SPEED_DEG is defined in globalVar.h
         const float rotSpeed = glm::radians(DEFAULT_ROT_SPEED_DEG); // radians per second
 
         // Update rotating objects before rendering so the change is visible immediately
