@@ -102,9 +102,15 @@ public:
 
     std::string openFolderDialog();
 
+    //void SetScore(int s) { m_score = s; }
+    //int GetScore() const { return m_score; }
+
     
     
 private:
+    // add to private members:
+    //int m_score = 0;
+
     // callback
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 
@@ -141,7 +147,7 @@ private:
     int iconW = 0, iconH = 0;
     GLuint m_playIconTex = 0;
 
-
+   
 
 };
 

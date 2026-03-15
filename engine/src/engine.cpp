@@ -5,6 +5,7 @@
 #include "imgui\imgui.h"
 #include <imgui\imgui_impl_glfw.h>
 #include <imgui\imgui_impl_opengl3.h>
+#include <imgui/imgui_internal.h>
 #include <imgui\ImGuiAF.h>
 #include "log.h"
 #include <iostream>
@@ -77,6 +78,9 @@ bool Engine::SaveScene(const std::string& path)
         glm::vec3 pos = entPtr->position;
         glm::vec3 rot = entPtr->rotation;
         glm::vec3 scl = entPtr->scale;
+		bool rotatingY = entPtr->isRotateY;
+		bool visible = entPtr->isVisible;
+		bool collidable = entPtr->isCollidable;
 
         out << "    {\n";
         out << "      \"id\": " << id << ",\n";
@@ -95,7 +99,11 @@ bool Engine::SaveScene(const std::string& path)
 
         out << "      \"position\": [" << pos.x << ", " << pos.y << ", " << pos.z << "],\n";
         out << "      \"rotation\": [" << rot.x << ", " << rot.y << ", " << rot.z << "],\n";
-        out << "      \"scale\": [" << scl.x << ", " << scl.y << ", " << scl.z << "]\n";
+        out << "      \"scale\": [" << scl.x << ", " << scl.y << ", " << scl.z << "],\n";
+        // keep an eye on the commas here
+        out << "      \"rotating\": " << (rotatingY ? "true" : "false") << ",\n";
+        out << "      \"visible\": " << (visible ? "true" : "false") << ",\n";
+        out << "      \"collidable\": " << (collidable ? "true" : "false") << "\n";
 
         out << "    }";
     }
@@ -176,6 +184,36 @@ bool Engine::LoadScene(const std::string& path)
             scl.y = je["scale"][1].get<float>();
             scl.z = je["scale"][2].get<float>();
         }
+		// is the objet rotating around Y? (for simple animation in the editor)
+        bool rotatingY = false;
+        if (je.contains("rotating")) {
+            if (je["rotating"].is_boolean()) {
+                rotatingY = je["rotating"].get<bool>();
+            }
+            else {
+                LOG_WARNING("Engine::LoadScene: 'rotating' field present but not boolean - ignoring");
+            }
+        }
+		// is the object visible?
+        bool visible = false;
+        if (je.contains("visible")) {
+            if (je["visible"].is_boolean()) {
+                visible = je["visible"].get<bool>();
+            }
+            else {
+                LOG_WARNING("Engine::LoadScene: 'visible' field present but not boolean - ignoring");
+            }
+        }
+		// is the object collidable?
+        bool collidable = false;
+        if (je.contains("collidable")) {
+            if (je["collidable"].is_boolean()) {
+                collidable = je["collidable"].get<bool>();
+            }
+            else {
+                LOG_WARNING("Engine::LoadScene: 'collidable' field present but not boolean - ignoring");
+            }
+        }
 
         std::string texPath;
         if (je.contains("texPath") && je["texPath"].is_string()) {
@@ -241,41 +279,44 @@ bool Engine::LoadScene(const std::string& path)
             // fallback: create a cube so you can inspect the saved transform
             AddCube(pos);
         }
+        //########################################################
+        if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+            GameObj* newObj = m_entities[m_selectedEntityIndex].get();
+            if (newObj) {
+                newObj->position = pos;
+                newObj->rotation = rot; // rotation stored in radians (matches your inspector)
+                newObj->scale = scl;
+
+                // Rebuild modelMatrix using same TRS order used elsewhere
+                newObj->modelMatrix = glm::translate(glm::mat4(1.0f), newObj->position);
+                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.x, glm::vec3(1, 0, 0));
+                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.y, glm::vec3(0, 1, 0));
+                newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.z, glm::vec3(0, 0, 1));
+                newObj->modelMatrix = glm::scale(newObj->modelMatrix, newObj->scale);
+
+                newObj->entName = name;
+                newObj->entId = id;
+
+                // restore rotation flag
+                newObj->isRotateY = rotatingY;
+				newObj->isVisible = visible;
+				newObj->isCollidable = collidable;
+
+                // Re-apply texture (loads full-resolution texture)
+                if (!texPath.empty() && m_entity) {
+                    if (!m_entity->SetTextureForGameObj(newObj, texPath)) {
+                        LOG_WARNING("Engine::LoadScene: failed to apply texture " << texPath << " to entity " << id);
+                    }
+                    else {
+                        LOG_INFO("Engine::LoadScene: applied texture " << texPath << " to entity " << id);
+                    }
+                }
+            }
+        }
 
 
-
-
-        // For this minimal loader, create a cube for each saved entity (you can expand later)
-        //AddCube(pos); // creates and selects a new cube, sets m_selectedEntityIndex
-
-        //if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
-        //    GameObj* newObj = m_entities[m_selectedEntityIndex].get();
-        //    if (newObj) {
-        //        // restore transform and name/id
-        //        newObj->position = pos;
-        //        newObj->rotation = rot;
-        //        newObj->scale = scl;
-        //        // recompute modelMatrix (same logic as inspector)
-        //        newObj->modelMatrix = glm::translate(glm::mat4(1.0f), newObj->position);
-        //        newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.x, glm::vec3(1, 0, 0));
-        //        newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.y, glm::vec3(0, 1, 0));
-        //        newObj->modelMatrix = glm::rotate(newObj->modelMatrix, newObj->rotation.z, glm::vec3(0, 0, 1));
-        //        newObj->modelMatrix = glm::scale(newObj->modelMatrix, newObj->scale);
-
-        //        newObj->entName = name;
-        //        newObj->entId = id;
-
-        //        // apply texture if present (this loads full-resolution texture)
-        //        if (!texPath.empty()) {
-        //            if (!m_entity->SetTextureForGameObj(newObj, texPath)) {
-        //                LOG_WARNING("Engine::LoadScene: failed to apply texture " << texPath << " to entity " << id);
-        //            }
-        //            else {
-        //                LOG_INFO("Engine::LoadScene: applied texture " << texPath << " to entity " << id);
-        //            }
-        //        }
-        //    }
-        //}
+        
+        // #######################################################
     }
 
     // After loading, clear selection
@@ -397,7 +438,7 @@ bool Engine::Initialize(const EngineConfig& config) {
         // Update rotating objects before rendering so the change is visible immediately
         for (auto& uptr : m_entities) {
             if (!uptr) continue;
-            if (!uptr->rotateY) continue;
+            if (!uptr->isRotateY) continue;
 
             // increment rotation.y (rotation is stored in radians)
             uptr->rotation.y += rotSpeed * m_frameDt;
@@ -787,9 +828,7 @@ void Engine::Run() {
 
 
 			
-            // ############################## Score board ################################
             
-            // ############################## End Score board ################################
 
    
            
@@ -845,9 +884,9 @@ void Engine::Run() {
                         ImGui::Text("Gameplay Properties");
                         ImGui::InputInt("Points", &selected->entPoints);
                         if (ImGui::Checkbox("Active", &selected->isActive)) { /* optionally handle enable/disable */ }
-						if (ImGui::Checkbox("Rotate Y", &selected->rotateY)) {
+						if (ImGui::Checkbox("Rotate Y", &selected->isRotateY)) {
 							// toggling rotateY will cause the object to start/stop rotating in the render loop
-							selected->rotateY = selected->rotateY; // just to emphasize the change happens immediately
+							selected->isRotateY = selected->isRotateY; // just to emphasize the change happens immediately
 						}
                         if (ImGui::Checkbox("Health Pack", &selected->isHealthPack)) {
                             // show health points input only if flagged
@@ -993,9 +1032,12 @@ void Engine::Run() {
 
             }
 			// ######################## End Main Object Explorer Window ####################
-
-           
-
+            
+	
+            
+            //if (window) {
+            //    window->SetScore(GetScore()); // push engine score into the window for display
+            //}
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound
             window->MainSceneWindow(glfwwindow);
@@ -1003,6 +1045,89 @@ void Engine::Run() {
             window->ResourcesInspector(glfwwindow);
 			window->EnvironmentExplorer(glfwwindow);
 			window->AssetBrowser(glfwwindow);
+
+            // ######################### Score board, resource #############################
+			// This needs a lot more work on it to be a full solution, but this is a starting point for an overlay
+            // that shows engine-driven values like score,
+            // health, or other gameplay info. You can expand this to include icons, multiple lines, or more complex layouts as needed.
+            ImGuiWindow* mainSceneWin = ImGui::FindWindowByName("Main scene");
+            if (mainSceneWin && ImGui::IsWindowNavFocusable(mainSceneWin)) {
+                // toolbar height used in MainSceneWindow
+                const float toolbarHeight = 40.0f;
+                const float overlayMarginX = 3; // same as content padding
+                const float overlayMarginY = 8.0f;  // gap under toolbar
+
+                // mainSceneWin->Pos is screen-space top-left of that window
+                ImVec2 overlayPos = ImVec2(
+                    mainSceneWin->Pos.x + mainSceneWin->WindowPadding.x + overlayMarginX,
+                    mainSceneWin->Pos.y + mainSceneWin->WindowPadding.y + toolbarHeight + overlayMarginY
+                );
+
+                ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always);
+
+                ImGui::SetNextWindowBgAlpha(0.45f); // semi-transparent
+
+                ImGuiWindowFlags overlayFlags =
+                    ImGuiWindowFlags_NoTitleBar |
+                    ImGuiWindowFlags_NoResize |
+                    ImGuiWindowFlags_NoMove |
+                    ImGuiWindowFlags_NoCollapse |
+                    ImGuiWindowFlags_NoSavedSettings |
+                    ImGuiWindowFlags_AlwaysAutoResize |
+                    ImGuiWindowFlags_NoFocusOnAppearing |
+                    ImGuiWindowFlags_NoNav |
+                    ImGuiWindowFlags_NoInputs; // make it click-through
+
+                ImGui::Begin("##ScoreOverlay", nullptr, overlayFlags);
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.3f, 1.0f));
+                ImGui::TextUnformatted("Score");
+                ImGui::PopStyleColor();
+
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+                ImGui::Text("%d", GetScore());
+                ImGui::PopStyleVar();
+
+                ImGui::End();
+            }
+
+
+
+             //// Score overlay: draw last so it's visually on top
+             //ImGuiIO& io = ImGui::GetIO();
+             //// Position in pixels from top-left. Example: 20,20
+             //ImVec2 overlayPos(20.0f, 20.0f);
+             //ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always);
+             //ImGui::SetNextWindowBgAlpha(0.45f); // semi-transparent background
+
+             //ImGuiWindowFlags overlayFlags =
+             //    ImGuiWindowFlags_NoTitleBar |
+             //    ImGuiWindowFlags_NoResize |
+             //    ImGuiWindowFlags_NoMove |
+             //    ImGuiWindowFlags_NoCollapse |
+             //    ImGuiWindowFlags_NoSavedSettings |
+             //    ImGuiWindowFlags_AlwaysAutoResize |
+             //    ImGuiWindowFlags_NoFocusOnAppearing |
+             //    ImGuiWindowFlags_NoNav;
+
+             //// If you don't want the overlay to capture mouse/keyboard input, add NoInputs
+             //// overlayFlags |= ImGuiWindowFlags_NoInputs;
+
+             //ImGui::Begin("##ScoreOverlay", nullptr, overlayFlags);
+
+             //// Optional styling for the text
+             //ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.3f, 1.0f)); // gold-ish title
+             //ImGui::TextUnformatted("Score");
+             //ImGui::PopStyleColor();
+
+             //ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+             //ImGui::Text("%d", GetScore());
+             //ImGui::PopStyleVar();
+
+             //ImGui::End();
+         
+         // ######################### End Score board, resource #############################
+
+
 
          // ##################################################### Picking ########################################################
 		 // ProcessViewportPick is in EditorInput and returns the picked entity index or -1 if none.
@@ -1229,12 +1354,15 @@ void Engine::ResolveCameraCollisionsAndPickups()
             //float d = glm::length(obj->position - camPos);
             float d = glm::length(objWorldPos - camPos);
 
-            
+           
 
 
             if (d <= m_pickupRadius) {
                 LOG_INFO("Collected Health Pack EntObj " << obj->entId << " Points " << obj->HealthPackPoints);
                 // mark collected
+               // AddScore(obj->HealthPackPoints);
+                m_score += obj->HealthPackPoints;
+
                 obj->isActive = false;
                 obj->isVisible = false;
                 // TODO: update player health/score state

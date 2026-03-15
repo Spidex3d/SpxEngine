@@ -29,7 +29,7 @@ struct GameObj { // Any game object not player-related
         rotation(0.0f),
         modelMatrix(1.0f),
         entPoints(0),
-		rotateY(false),
+		isRotateY(false),
         isActive(true),
         isHealthPack(false),
 		HealthPackPoints(0),
@@ -53,7 +53,7 @@ struct GameObj { // Any game object not player-related
     glm::mat4 modelMatrix;  // Model matrix for transformations
 
     int  entPoints;         // value or score associated with the entity
-	bool rotateY;          // whether the entity should rotate around the Y-axis (for simple animation)
+	bool isRotateY;          // whether the entity should rotate around the Y-axis (for simple animation)
     bool isActive;
     bool isHealthPack;
     int  HealthPackPoints;

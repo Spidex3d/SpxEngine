@@ -145,7 +145,7 @@ void SpxWindow::SetUpImGui(GLFWwindow* window) {
 	std::string AFfontPath  = GetAssetPath(FA_SOLID_PATH);
     io.Fonts->AddFontFromFileTTF(AFfontPath.c_str(), FONT_SIZE, &fontconfig, ranges);
 
-	// #################################################### my fonts and icons #####################################################
+	// #################################################### my fonts and icons test #####################################################
 	std::string MYfontPath = GetAssetPath(MY_SOLID_PATH);
     static const ImWchar icon_ranges[] = { ICON_MIN_MY, ICON_MAX_MY, 0 }; 
     ImFontConfig cfg;
@@ -325,6 +325,50 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         ImGui::Spacing();
     }
     // ######################################################### End Top Toolbar ######################################################
+    
+    //    // ######################### Score board, resource #############################
+    //const float toolbarHeight = 30.0f;          // same height you used for the toolbar
+    //const float overlayMarginX = 12.0f;         // margin from left edge of content
+    //const float overlayMarginY = 6.0f;          // small gap under toolbar
+
+    //// Compute overlay position in screen coordinates: pos is content region top-left
+    //ImVec2 overlayScreenPos = ImVec2(pos.x + overlayMarginX, pos.y + toolbarHeight + overlayMarginY);
+
+    //// Ensure the next window will appear exactly at the computed screen position
+    //ImGui::SetNextWindowPos(overlayScreenPos, ImGuiCond_Always);
+    //ImGui::SetNextWindowBgAlpha(0.45f); // semi-transparent background
+
+    //ImGuiWindowFlags overlayFlags =
+    //    ImGuiWindowFlags_NoTitleBar |
+    //    ImGuiWindowFlags_NoResize |
+    //    ImGuiWindowFlags_NoMove |
+    //    ImGuiWindowFlags_NoCollapse |
+    //    ImGuiWindowFlags_NoSavedSettings |
+    //    ImGuiWindowFlags_AlwaysAutoResize |
+    //    ImGuiWindowFlags_NoFocusOnAppearing |
+    //    ImGuiWindowFlags_NoNav;
+
+    //// If you want the overlay to be click-through (not intercept mouse), enable NoInputs
+    //// overlayFlags |= ImGuiWindowFlags_NoInputs;
+
+    //ImGui::Begin("##ScoreOverlay", nullptr, overlayFlags);
+
+    //// Styling
+    //ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.3f, 1.0f));
+    //ImGui::TextUnformatted("Score");
+    //ImGui::PopStyleColor();
+
+    //ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+    //ImGui::Text("%d", m_score);
+    //ImGui::PopStyleVar();
+
+    //ImGui::End();
+    //   
+
+    //    // ######################### End Score board, resource #############################
+    
+
+
 
     // Determine desired framebuffer pixel size (account for HiDPI scale)
     int desired_w = static_cast<int>(window_width * io.DisplayFramebufferScale.x);

@@ -60,11 +60,18 @@ public:
    
     // Access camera
     Camera& GetCamera() { return m_camera; }
+	//// use for score tracking, pickups, etc. in your game logic and display in UI as needed
+    void AddScore(int delta) { m_score += delta; }
+    void SetScore(int s) { m_score = s; }
+    int GetScore() const { return m_score; }
+
+
 
     int m_modelObjIdx;  // obj files 
     int m_modelGltfIdx; // gltf files
 
 private:
+    int m_score = 0; // simple score tracking for pickups, etc. in your game logic and display in UI as needed
     // All varibles with  leading m_ for member variables that I have looked at and understand what they do
     EngineConfig m_config;
     std::unique_ptr<SpxWindow> window;
@@ -96,6 +103,9 @@ private:
     float m_cameraRadius = 0.5f;   // player/camera collision radius (tune to fit scale)
     float m_pickupRadius = 1.5f;   // distance to auto-pickup health packs
 	// Health pack must be a set size for pickup to work correctly 0.5 x 0.5 x 0.5 centered at origin
+    // 
+    /*int m_score = 0;*/
+    // 
     // Collision helpers
     bool SphereIntersectsAABB_World(const glm::vec3& sphereCenterWorld, float radius,
         const glm::mat4& modelMatrix,
@@ -105,6 +115,7 @@ private:
 
     // Called each Tick to resolve camera collisions and pickups
     void ResolveCameraCollisionsAndPickups();
+
 
     bool m_running = false; // main loop flag
     std::chrono::steady_clock::time_point m_lastTime;
