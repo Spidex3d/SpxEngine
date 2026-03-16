@@ -13,6 +13,7 @@ class Shader;
 
 #include "entity.h" // Engine will own the Entity and the entity vector
 #include "../src/Sky/skyBox.h"
+#include "../src/Effects/lighting.h"
 #include <glm/gtc/matrix_inverse.hpp> // optional, glm::inverse already available via gtc/matrix_transform if included
 
 
@@ -85,8 +86,12 @@ private:
    
     int m_planeObjIdx; // 0 plane object index
     int m_cubeObjIdx;  // 0 cube object index
+	int m_lightObjIdx; // 0 light object index
 	int m_floorObjIdx; //0 floor object index
 	int m_skyIdx;      // 0 skybox index
+
+	// Engine-owned lighting state
+    std::unique_ptr<LightManager> m_lightManager; //Lighting
 
     int m_selectedEntityIndex = -1; // -1 = none selected
 

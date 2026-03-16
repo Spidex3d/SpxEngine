@@ -122,6 +122,16 @@ public:
     void RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& FloorObjIdx, int& selectedEntityId);
 
+
+    // ############################   LIGHTING #######################################
+    void CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& LightIdx, const glm::vec3& position = glm::vec3(0.0f));
+
+    void RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId);
+    
+    // ############################   END LIGHTING #######################################
+
     bool SetTextureForGameObj(GameObj* obj, const std::string& path);
 
 private:
@@ -297,6 +307,77 @@ public:
     }
 
     void DrawPlane() {
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // using indices
+        glBindVertexArray(0);
+    }
+
+private:
+
+};
+// Draw the light sprite (a simple plane that always faces the camera, used to represent
+// point lights in the scene for visualization/debugging purposes)
+class LightSprite : public GameObj {
+
+public:
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+
+    LightSprite(int idx, const std::string& name, int LightIdx) {
+        entId = idx;
+        entName = name;
+        entObjectIndex = LightIdx;
+        entTypeID = OBJ_PLANE; // from globalVar.h = 2
+
+        // default transform
+        position = glm::vec3(0.0f);
+        scale = glm::vec3(1.0f);
+        rotation = glm::vec3(0.0f);
+        modelMatrix = glm::mat4(1.0f);
+
+
+        float vertices[] = {
+            //Positions          Normals          Tex coords
+             0.5f,  0.5f, 0.0f,  0.0f,0.0f,1.0f,  1.0f, 1.0f,
+             0.5f, -0.5f, 0.0f,  0.0f,0.0f,1.0f,  1.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f,  0.0f,0.0f,1.0f,  0.0f, 0.0f,
+            -0.5f,  0.5f, 0.0f,  0.0f,0.0f,1.0f,  0.0f, 1.0f
+        };
+        unsigned int indices[] = {
+            0, 1, 3,
+            1, 2, 3
+        };
+
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glGenBuffers(1, &EBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        // Vertex positions
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        // Normal attribute
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        // Texture coordinates
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    ~LightSprite() {
+        if (VAO) { glDeleteVertexArrays(1, &VAO); VAO = 0; }
+        if (VBO) { glDeleteBuffers(1, &VBO); VBO = 0; }
+        if (EBO) { glDeleteBuffers(1, &EBO); EBO = 0; }
+    }
+
+    void DrawLight() {
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // using indices
         glBindVertexArray(0);

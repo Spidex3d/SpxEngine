@@ -19,6 +19,7 @@
 #include "../src/input/EditorInput.h" // Include the appropriate header file for EditorInput 
 #include "../src/Ui/icon_loader.h"
 #include "../src/Sky/skyBox.h"
+#include "../src/Effects/lighting.h"
 
 
 #include "log.h"
@@ -326,44 +327,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
     }
     // ######################################################### End Top Toolbar ######################################################
     
-    //    // ######################### Score board, resource #############################
-    //const float toolbarHeight = 30.0f;          // same height you used for the toolbar
-    //const float overlayMarginX = 12.0f;         // margin from left edge of content
-    //const float overlayMarginY = 6.0f;          // small gap under toolbar
-
-    //// Compute overlay position in screen coordinates: pos is content region top-left
-    //ImVec2 overlayScreenPos = ImVec2(pos.x + overlayMarginX, pos.y + toolbarHeight + overlayMarginY);
-
-    //// Ensure the next window will appear exactly at the computed screen position
-    //ImGui::SetNextWindowPos(overlayScreenPos, ImGuiCond_Always);
-    //ImGui::SetNextWindowBgAlpha(0.45f); // semi-transparent background
-
-    //ImGuiWindowFlags overlayFlags =
-    //    ImGuiWindowFlags_NoTitleBar |
-    //    ImGuiWindowFlags_NoResize |
-    //    ImGuiWindowFlags_NoMove |
-    //    ImGuiWindowFlags_NoCollapse |
-    //    ImGuiWindowFlags_NoSavedSettings |
-    //    ImGuiWindowFlags_AlwaysAutoResize |
-    //    ImGuiWindowFlags_NoFocusOnAppearing |
-    //    ImGuiWindowFlags_NoNav;
-
-    //// If you want the overlay to be click-through (not intercept mouse), enable NoInputs
-    //// overlayFlags |= ImGuiWindowFlags_NoInputs;
-
-    //ImGui::Begin("##ScoreOverlay", nullptr, overlayFlags);
-
-    //// Styling
-    //ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.3f, 1.0f));
-    //ImGui::TextUnformatted("Score");
-    //ImGui::PopStyleColor();
-
-    //ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
-    //ImGui::Text("%d", m_score);
-    //ImGui::PopStyleVar();
-
-    //ImGui::End();
-    //   
+    
 
     //    // ######################### End Score board, resource #############################
     
@@ -457,9 +421,17 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             // other menu items...
             ImGui::EndMenu();
         }
-
+		// Lighting call to action callback to add a new light to the scene,
+        // the type of light will be determined by the menu item clicked and passed as a string argument to the callback
         if (ImGui::BeginMenu("Add a new Light")) {
-            if (ImGui::MenuItem("Sun Light")) {}
+            if (ImGui::MenuItem("Ambient")) {
+                if (m_actionCallback) m_actionCallback("AddLight:Ambient");
+                
+            }
+          
+            if (ImGui::MenuItem("Spot")) {
+                if (m_actionCallback) m_actionCallback("AddLight:Spot");
+            }
             ImGui::EndMenu();
         }
 

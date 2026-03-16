@@ -28,5 +28,8 @@ const int SKY_OBJ = 30; // for skybox
 
 std::string modelPathObj = "";
 
-
 const int OBJ_FLOOR = 20; // a large plane to serve as the floor.
+// Lighting
+const int OBJ_LIGHT_AMBIENT = 40;
+const int OBJ_LIGHT_SPOT = 41;
+

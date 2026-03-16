@@ -389,6 +389,7 @@ bool Engine::Initialize(const EngineConfig& config) {
     m_cubeObjIdx = 0;
 	m_cubeObjIdx = 0;
     m_planeObjIdx = 0;
+    m_lightObjIdx = 0; // index for the light
 	m_floorObjIdx = 0;
 	m_skyIdx = 0;
 
@@ -413,6 +414,7 @@ bool Engine::Initialize(const EngineConfig& config) {
         LOG_INFO("Engine: acquired Sky shader from ShaderManager");
     }
 
+    m_lightManager = std::make_unique<LightManager>(); // Lighting set up
         
     window->SetRenderCallback([this]() {
 
@@ -463,38 +465,11 @@ bool Engine::Initialize(const EngineConfig& config) {
             m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
             m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
             m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
+            m_entity->RenderLightSprite(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_lightObjIdx, selectedEntityId);
             m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
         }
 
-   //     int fbw = window->GetFramebufferWidth();
-   //     int fbh = window->GetFramebufferHeight();
-   //     if (fbw <= 0 || fbh <= 0) return;
-
-   //     float aspect = (fbh > 0) ? static_cast<float>(fbw) / static_cast<float>(fbh) : 1.0f;
-
-   //     glm::mat4 view = m_camera.GetViewMatrix();
-   //     glm::mat4 projection = m_camera.GetProjectionMatrix(aspect);
-
-   //     // compute selected entity id (or -1 if none)
-   //     int selectedEntityId = -1;
-   //     if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
-   //         selectedEntityId = m_entities[m_selectedEntityIndex]->entId;
-   //     }
-
-   //     if (m_entity) {
-   //         // Add a sky box
-   //         m_entity->RenderSkyBox(m_skyShader, view, projection, m_entities, m_currentEntityIndex, m_skyIdx, selectedEntityId);
-   //         // render cubes and planes (updated signatures with selectedEntityId)
-			//m_entity->RenderGltfModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
-			//m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
-   //         m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
-   //         m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
-   //         m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
-   //     
-   //     
-   //     }
-
-
+  
     });
     
 
@@ -624,30 +599,55 @@ bool Engine::Initialize(const EngineConfig& config) {
                 return; // handled
             }
 
-            // No selection: create a new plane (or cube) and apply the texture to it
-            //if (m_entity) {
-            //    // This will create a Floor (or call AddPlane/AddCube if you prefer)
-            //    AddPlane(glm::vec3(0.0f)); // creates and selects new plane
-            //    if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
-            //        GameObj* newObj = m_entities[m_selectedEntityIndex].get();
-            //        if (newObj) {
-            //            if (!m_entity->SetTextureForGameObj(newObj, payload)) {
-            //                LOG_WARNING("Engine: Failed to apply texture to new entity: " << payload);
-            //            }
-            //            else {
-            //                LOG_INFO("Engine: Created new entity and applied texture: " << payload);
-            //            }
-            //        }
-            //    }
-            //}
-            //else {
-            //    LOG_WARNING("Engine: no entity manager available to add/apply texture");
-            //}
 
             return; // handled
         }
-        
         //##################################################### End Texture ###########################################
+        // ################################### Lighting ################################################# 
+        const std::string addLightPrefix = "AddLight:";
+        if (cmd.rfind(addLightPrefix, 0) == 0) {
+            std::string payload = cmd.substr(addLightPrefix.size()); // "Ambient" or "Spot"
+            if (payload == "Ambient") {
+                int id = m_lightManager->AddAmbient(glm::vec3(1.0f), 0.2f);
+                // create a small cube for visual: use Entity::CreateCube and scale it small / maybe a special color
+                m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, glm::vec3(0.0f));
+                int newIndex = static_cast<int>(m_entities.size()) - 1;
+                if (newIndex >= 0) {
+                    GameObj* g = m_entities[newIndex].get();
+                    if (g) {
+                        g->scale = glm::vec3(0.2f); // small
+                        g->modelMatrix = glm::translate(glm::mat4(1.0f), g->position);
+                        g->modelMatrix = glm::scale(g->modelMatrix, g->scale);
+                        // link it to the light for UI mapping
+                        Light* L = m_lightManager->GetLight(id);
+                        if (L) L->linkedEntityIndex = newIndex;
+                    }
+                }
+            }
+            else if (payload == "Spot") {
+                glm::vec3 pos(0.0f, 2.0f, 0.0f);
+                glm::vec3 dir(0.0f, -1.0f, 0.0f);
+                int id = m_lightManager->AddSpot(pos, dir, glm::vec3(1.0f), 1.0f, 0.95f);
+                // create visual marker as above
+                m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, pos);
+                int newIndex = static_cast<int>(m_entities.size()) - 1;
+                if (newIndex >= 0) {
+                    GameObj* g = m_entities[newIndex].get();
+                    if (g) {
+                        g->scale = glm::vec3(0.25f);
+                        g->modelMatrix = glm::translate(glm::mat4(1.0f), g->position);
+                        g->modelMatrix = glm::scale(g->modelMatrix, g->scale);
+                        Light* L = m_lightManager->GetLight(id);
+                        if (L) L->linkedEntityIndex = newIndex;
+                    }
+                }
+            }
+            return;
+        }
+        
+        // ################################### End Lighting ################################################# 
+
+        
 
         // ---- Handle "AddSkyBox:<path>" without creating duplicates ----
         const std::string prefix = "AddSkyBox:";

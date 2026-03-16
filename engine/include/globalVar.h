@@ -7,6 +7,7 @@ extern const float DEFAULT_ROT_SPEED_DEG; // degrees per second for rotation of 
 
 constexpr const char* TEXTURE_PATH = "assets/textures/texture/";
 constexpr const char* SHADER_PATH = "Shaders/";
+constexpr const char* LIGHT_PATH = "src/Effects/";
 
 extern bool ShouldAddSkyBox; // if set to true add skybox images to buttons
 extern bool ShouldAddTextures; // if set to true add textures to buttons in asset browser tab
@@ -29,6 +30,10 @@ extern const int GLTF_OBJ_MODEL; // generic GLTF model loaded from file. 16
 extern std::string modelPathObj;
 extern std::string modelPathGltf;
 
+
+// Lighting
+extern const int OBJ_LIGHT_AMBIENT;
+extern const int OBJ_LIGHT_SPOT;
 
 //extern bool ShouldAddPlane;
 

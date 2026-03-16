@@ -650,6 +650,93 @@ void Entity::RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4&
     shader->SetUniformInt("u_selected", 0);
 
 }
+// ############################################## Light Sprite ##############################################
+
+void Entity::CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector,
+    int& currentIndex, int& LightIdx, const glm::vec3& position)
+{
+    stbi_set_flip_vertically_on_load(true);
+
+    auto newLight = std::make_unique<LightSprite>(currentIndex, "Default Light", LightIdx);
+
+   newLight->position = position;
+   newLight->scale = glm::vec3(1.0f);
+
+    // Build TRS: translate * rotate * scale (no rotation here)
+    newLight->modelMatrix = glm::translate(glm::mat4(1.0f), newLight->position);
+    newLight->modelMatrix = glm::scale(newLight->modelMatrix, newLight->scale);
+
+    // Load texture via SetTextureForGameObj
+    std::string texPath = GetAssetPath(LIGHT_PATH);
+    std::string texFile = "sun_01.png";
+    std::string full = texPath + texFile;
+
+    if (!SetTextureForGameObj(newLight.get(), full)) {
+        LOG_WARNING("CreatePlane: Failed to set texture: " << full);
+    }
+    else {
+        LOG_INFO("CreatePlane: texture loaded tex_ID=" << newLight->tex_ID << " path=" << newLight->texPath);
+    }
+
+    entVector.push_back(std::move(newLight));
+    ++currentIndex;
+    // PlaneObjIdx updated by caller if needed
+    ++LightIdx;
+}
+
+void Entity::RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId)
+{
+    // Ensure shader is available
+    if (!shader) {
+        LOG_WARNING("Entity::RenderPlane called without shader; skipping draw.");
+        return;
+    }
+
+    loadShader(shader, view, projection);
+
+    // Render stored planes using their stored modelMatrix and persistent texture id
+    for (const auto& model : entVector) {
+        if (!model) continue;
+
+        // Skip invisible objects early
+        if (!model->isVisible) continue;
+
+        if (auto* light = dynamic_cast<LightSprite*>(model.get())) {
+            // Use the pre-calculated model matrix (don't reset it)
+            shader->setMat4("model", light->modelMatrix);
+
+            // Set selection uniform: compare entity id
+            int isSelected = (light->entId == selectedEntityId) ? 1 : 0;
+            shader->SetUniformInt("u_selected", isSelected);
+            shader->setVec3("u_highlightColor", glm::vec3(0.2, 0.2f, 0.8f)); // orange-ish
+
+            // Does this object have a texture?
+            bool hasTex = (light->tex_ID != 0);
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+            if (hasTex) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, light->tex_ID);
+            }
+            else {
+                // optionally give each object an albedo color (fallback)
+                // you can expose a per-object color in GameObj, for now use white
+                shader->setVec3("u_albedo", glm::vec3(1.0f, 1.0f, 1.0f));
+            }
+
+            light->DrawLight();
+
+            if (light->tex_ID) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
+        }
+    }
+}
+
+
+
+// ############################################## End Light Sprite ##############################################
 
 bool Entity::SetTextureForGameObj(GameObj* obj, const std::string& path)
 {

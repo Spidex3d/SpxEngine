@@ -152,6 +152,7 @@
     <ClCompile Include="Shaders\ShaderManager.cpp" />
     <ClCompile Include="src\asset_path.cpp" />
     <ClCompile Include="src\Camera\Camera.cpp" />
+    <ClCompile Include="src\Effects\lighting.cpp" />
     <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\entity.cpp" />
     <ClCompile Include="src\glad.c" />
@@ -179,6 +180,7 @@
     <ClInclude Include="include\globalVar.h" />
     <ClInclude Include="include\log.h" />
     <ClInclude Include="include\shader.h" />
+    <ClInclude Include="src\Effects\lighting.h" />
     <ClInclude Include="src\Textures\textures.h" />
     <ClInclude Include="include\window.h" />
     <ClInclude Include="Shaders\ShaderManager.h" />
