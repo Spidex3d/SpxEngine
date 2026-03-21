@@ -23,15 +23,13 @@ struct WindowConfig {
 };
 
 //class Engine; // forward declaration
+class LightManager;
 
 class SpxWindow {
 public:
     using ResizeCallback = std::function<void(int width, int height)>;
     using RenderCallback = std::function<void()>; // called while FBO is bound so Engine can render into it
     using ActionCallback = std::function<void(const std::string&)>; // called when UI requests an action
-
-    
-
 
     explicit SpxWindow(const WindowConfig& config);
     ~SpxWindow();
@@ -105,7 +103,9 @@ public:
     //void SetScore(int s) { m_score = s; }
     //int GetScore() const { return m_score; }
 
-    
+    // Lighting
+    void SetLightManager(LightManager* lm) { m_lightManager = lm; }
+
     
 private:
     // add to private members:
@@ -146,8 +146,8 @@ private:
 	// Buttons for toolbar (using my icons)
     int iconW = 0, iconH = 0;
     GLuint m_playIconTex = 0;
-
-   
+    // Lighting
+    LightManager* m_lightManager = nullptr;
 
 };
 

@@ -1045,18 +1045,26 @@ void Engine::Run() {
 
             }
 			// ######################## End Main Object Explorer Window ####################
-            for (auto& l : m_lightManager->GetLights()) {
-                if (l.linkedEntityIndex >= 0 && l.linkedEntityIndex < (int)m_entities.size()) {
-                    GameObj* g = m_entities[l.linkedEntityIndex].get();
-                    if (g) {
-                        // copy the entity position into the light so lighting follows the visual marker
-                        l.position = g->position;
-
-                        // optionally also update the light direction for spot lights if you store direction on the entity
-                        // e.g. l.direction = someComputedDirectionFromEntity(g);
+            
+            if (m_lightManager) {
+                for (auto& l : m_lightManager->GetLights()) {
+                    if (l.linkedEntityIndex >= 0 && l.linkedEntityIndex < (int)m_entities.size()) {
+                        GameObj* g = m_entities[l.linkedEntityIndex].get();
+                        if (g) {
+                            l.position = g->position; // copy GameObj -> Light so light follows sprite
+                            // if you want spot direction from entity rotation you can set l.direction here
+                        }
                     }
                 }
+
+                // now set lighting uniforms on the material shader(s)
+                m_lightManager->ApplyToShader(m_planeShader);
+                // apply to any other shaders that need lighting
             }
+
+            m_lightManager = std::make_unique<LightManager>();
+            // expose to UI:
+            if (window) window->SetLightManager(m_lightManager.get());
 
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound

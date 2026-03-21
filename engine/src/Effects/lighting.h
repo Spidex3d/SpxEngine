@@ -53,8 +53,19 @@ public:
 
     int GetNextId() const { return m_nextId; }
 
+    
+    glm::vec3 GetGlobalAmbient() const { return m_globalAmbient; }
+    float GetGlobalAmbientIntensity() const { return m_globalAmbientIntensity; }
+    void SetGlobalAmbient(const glm::vec3& color, float intensity) {
+        m_globalAmbient = color;
+        m_globalAmbientIntensity = intensity;
+    }
+
 private:
     std::vector<Light> m_lights;
     int m_nextId = 1;
+    glm::vec3 m_globalAmbient = glm::vec3(0.0f);
+    float m_globalAmbientIntensity = 0.0f;
+ 
     static constexpr int MAX_SPOT_LIGHTS = 8;
 };

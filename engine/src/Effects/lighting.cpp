@@ -56,7 +56,6 @@ Light* LightManager::FindByEntityIndex(int entityIndex) {
 void LightManager::ApplyToShader(Shader* shader) {
     if (!shader) return;
 
-    // Aggregate ambient contribution from ambient lights
     glm::vec3 ambientSum(0.0f);
     for (const auto& l : m_lights) {
         if (!l.enabled) continue;
@@ -64,8 +63,23 @@ void LightManager::ApplyToShader(Shader* shader) {
             ambientSum += l.color * l.intensity;
         }
     }
+
+    // Add global ambient (if any)
+    ambientSum += m_globalAmbient * m_globalAmbientIntensity;
+
     shader->Use();
     shader->setVec3("u_ambient", ambientSum);
+
+    //// Aggregate ambient contribution from ambient lights
+    //glm::vec3 ambientSum(0.0f);
+    //for (const auto& l : m_lights) {
+    //    if (!l.enabled) continue;
+    //    if (l.type == LightType::Ambient) {
+    //        ambientSum += l.color * l.intensity;
+    //    }
+    //}
+    //shader->Use();
+    //shader->setVec3("u_ambient", ambientSum);
 
     // Collect up to MAX_SPOT_LIGHTS spots
     int slot = 0;

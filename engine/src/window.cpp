@@ -775,15 +775,59 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                     ImGui::EndTabItem();
 				} // ######################################### End Sky Lab #########################################
 
-
                 if (ImGui::BeginTabItem("Lighting Lab"))
                 {
-                    // TO DO Later
-                    // Dispaly types of lighting we can use (directional, point, spot, etc.) as image buttons
-					// ImGui::ColorEdit4("Ambient Color", m_ambientColor);
+                    // Guard: ensure we have a LightManager
+                    if (!m_lightManager) {
+                        ImGui::TextWrapped("Lighting not available (no LightManager attached).");
+                    }
+                    else {
+                        glm::vec3 amb = m_lightManager->GetGlobalAmbient();
+                        float ambColor[4] = { amb.r, amb.g, amb.b, 1.0f };
+                        float ambIntensity = m_lightManager->GetGlobalAmbientIntensity();
+
+                        // In-window controls (you don't need a nested Begin here)
+                        // ColorEdit4 (alpha not used by lighting but useful visually)
+                        if (ImGui::ColorEdit4("Ambient Color", ambColor)) {
+                            m_lightManager->SetGlobalAmbient(glm::vec3(ambColor[0], ambColor[1], ambColor[2]), ambIntensity);
+                        }
+
+                        // Intensity slider
+                        if (ImGui::SliderFloat("Ambient Intensity", &ambIntensity, 0.0f, 5.0f)) {
+                            m_lightManager->SetGlobalAmbient(glm::vec3(ambColor[0], ambColor[1], ambColor[2]), ambIntensity);
+                        }
+
+                        ImGui::Text("Note: shaders use uniform 'u_ambient'");
+                    }
 
                     ImGui::EndTabItem();
-                } // End Lighting Lab
+                }
+
+
+                //if (ImGui::BeginTabItem("Lighting Lab"))
+                //{
+                //    glm::vec3 amb = m_lightManager->GetGlobalAmbient();
+                //    float ambColor[4] = { amb.r, amb.g, amb.b, 1.0f };
+                //    float ambIntensity = m_lightManager->GetGlobalAmbientIntensity();
+
+                //    ImGui::Begin("Environment Controls");
+
+                //    // ColorEdit4 (alpha isn't used by lighting but useful visually)
+                //    if (ImGui::ColorEdit4("Ambient Color", ambColor)) {
+                //        // user changed color -> update LightManager (keep current intensity)
+                //        m_lightManager->SetGlobalAmbient(glm::vec3(ambColor[0], ambColor[1], ambColor[2]), ambIntensity);
+                //    }
+
+                //    // Intensity slider (expose a reasonable range)
+                //    if (ImGui::SliderFloat("Ambient Intensity", &ambIntensity, 0.0f, 5.0f)) {
+                //        m_lightManager->SetGlobalAmbient(glm::vec3(ambColor[0], ambColor[1], ambColor[2]), ambIntensity);
+                //    }
+
+                //    ImGui::Text("Note: shaders use uniform 'u_ambient'");
+                //    ImGui::End();
+
+                //    ImGui::EndTabItem();
+                //} // End Lighting Lab
 
                 if (ImGui::BeginTabItem("Particles Lab"))
                 {
