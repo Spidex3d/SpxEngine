@@ -13,10 +13,12 @@ public:
 
     // Non-owning accessors
     static Shader* Default() { return defaultShader.get(); }
+    static Shader* Sprite() { return lightSpriteShader.get(); }
     static Shader* Sky() { return skyShader.get(); }
 
 private:
     static std::unique_ptr<Shader> defaultShader;   // Default shader for rendering most objects
+    static std::unique_ptr<Shader> lightSpriteShader;   // Sprite shader for rendering Light sprites
     static std::unique_ptr<Shader> skyShader;       // Sky shader
 };
 

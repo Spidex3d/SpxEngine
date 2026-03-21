@@ -389,10 +389,10 @@ bool Engine::Initialize(const EngineConfig& config) {
     m_cubeObjIdx = 0;
 	m_cubeObjIdx = 0;
     m_planeObjIdx = 0;
-    m_lightObjIdx = 0; // index for the light
 	m_floorObjIdx = 0;
 	m_skyIdx = 0;
-
+    m_lightObjIdx = 0; // index for the light
+   
 
     std::string shaderDir = GetAssetPath("Shaders/");
     ShaderManager::SetupShaders(shaderDir);
@@ -456,16 +456,27 @@ bool Engine::Initialize(const EngineConfig& config) {
             uptr->modelMatrix = glm::scale(uptr->modelMatrix, uptr->scale);
         }
         // ---- end rotation update ----
+		// #################################### Lighting application new ####################################
+        if (m_lightManager) {
+            // Apply lighting uniforms to the object shader(s) that expect u_ambient / u_spotLights[]
+            m_lightManager->ApplyToShader(m_planeShader);            // default/object shader
+            // If you have other object shaders, also call ApplyToShader on them:
+            // m_lightManager->ApplyToShader(ShaderManager::Default()); // same as m_planeShader if equal
+        }
 
         if (m_entity) {
             // Add a sky box
             m_entity->RenderSkyBox(m_skyShader, view, projection, m_entities, m_currentEntityIndex, m_skyIdx, selectedEntityId);
+            /*m_entity->RenderLightSprite(ShaderManager::Sprite(), view, projection, m_entities, m_currentEntityIndex,
+                m_lightObjIdx, selectedEntityId, m_lightManager.get());*/
+            m_entity->RenderLightSprite(ShaderManager::Sprite(), view, projection, m_entities, m_currentEntityIndex,
+                m_lightObjIdx, selectedEntityId);
             // render other objects...
             m_entity->RenderGltfModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelGltfIdx, selectedEntityId);
             m_entity->RenderObjModel(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_modelObjIdx, selectedEntityId);
             m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
             m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
-            m_entity->RenderLightSprite(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_lightObjIdx, selectedEntityId);
+            //m_entity->RenderLightSprite(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_lightObjIdx, selectedEntityId);
             m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
         }
 
@@ -604,6 +615,8 @@ bool Engine::Initialize(const EngineConfig& config) {
         }
         //##################################################### End Texture ###########################################
         // ################################### Lighting ################################################# 
+		// We will need to set a flag to identify light entities so they can be rendered differently
+        // (e.g. sprite image) and excluded from certain operations at run/play time.
         const std::string addLightPrefix = "AddLight:";
         if (cmd.rfind(addLightPrefix, 0) == 0) {
             std::string payload = cmd.substr(addLightPrefix.size()); // "Ambient" or "Spot"
@@ -1032,18 +1045,25 @@ void Engine::Run() {
 
             }
 			// ######################## End Main Object Explorer Window ####################
-            
-	
-            
-            //if (window) {
-            //    window->SetScore(GetScore()); // push engine score into the window for display
-            //}
+            for (auto& l : m_lightManager->GetLights()) {
+                if (l.linkedEntityIndex >= 0 && l.linkedEntityIndex < (int)m_entities.size()) {
+                    GameObj* g = m_entities[l.linkedEntityIndex].get();
+                    if (g) {
+                        // copy the entity position into the light so lighting follows the visual marker
+                        l.position = g->position;
+
+                        // optionally also update the light direction for spot lights if you store direction on the entity
+                        // e.g. l.direction = someComputedDirectionFromEntity(g);
+                    }
+                }
+            }
+
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound
             window->MainSceneWindow(glfwwindow);
 			window->MainScreenMenu(glfwwindow);
             window->ResourcesInspector(glfwwindow);
-			window->EnvironmentExplorer(glfwwindow);
+			window->EnvironmentExplorer(glfwwindow); // sky lab lighting lab particals lab
 			window->AssetBrowser(glfwwindow);
 
             // ######################### Score board, resource #############################
@@ -1089,42 +1109,7 @@ void Engine::Run() {
 
                 ImGui::End();
             }
-
-
-
-             //// Score overlay: draw last so it's visually on top
-             //ImGuiIO& io = ImGui::GetIO();
-             //// Position in pixels from top-left. Example: 20,20
-             //ImVec2 overlayPos(20.0f, 20.0f);
-             //ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always);
-             //ImGui::SetNextWindowBgAlpha(0.45f); // semi-transparent background
-
-             //ImGuiWindowFlags overlayFlags =
-             //    ImGuiWindowFlags_NoTitleBar |
-             //    ImGuiWindowFlags_NoResize |
-             //    ImGuiWindowFlags_NoMove |
-             //    ImGuiWindowFlags_NoCollapse |
-             //    ImGuiWindowFlags_NoSavedSettings |
-             //    ImGuiWindowFlags_AlwaysAutoResize |
-             //    ImGuiWindowFlags_NoFocusOnAppearing |
-             //    ImGuiWindowFlags_NoNav;
-
-             //// If you don't want the overlay to capture mouse/keyboard input, add NoInputs
-             //// overlayFlags |= ImGuiWindowFlags_NoInputs;
-
-             //ImGui::Begin("##ScoreOverlay", nullptr, overlayFlags);
-
-             //// Optional styling for the text
-             //ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.3f, 1.0f)); // gold-ish title
-             //ImGui::TextUnformatted("Score");
-             //ImGui::PopStyleColor();
-
-             //ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
-             //ImGui::Text("%d", GetScore());
-             //ImGui::PopStyleVar();
-
-             //ImGui::End();
-         
+                     
          // ######################### End Score board, resource #############################
 
 
@@ -1147,7 +1132,7 @@ void Engine::Run() {
                         
         }
         // ################################################# End Picking ########################################################
-            
+        
         window->PollEvents();
 
 

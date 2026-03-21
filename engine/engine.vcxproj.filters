@@ -202,5 +202,7 @@
     <None Include="Shaders\default.vert" />
     <None Include="Shaders\sky.frag" />
     <None Include="Shaders\sky.vert" />
+    <None Include="Shaders\sprite.vert" />
+    <None Include="Shaders\sprite.frag" />
   </ItemGroup>
 </Project>

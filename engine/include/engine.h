@@ -86,9 +86,10 @@ private:
    
     int m_planeObjIdx; // 0 plane object index
     int m_cubeObjIdx;  // 0 cube object index
-	int m_lightObjIdx; // 0 light object index
 	int m_floorObjIdx; //0 floor object index
 	int m_skyIdx;      // 0 skybox index
+	int m_lightObjIdx; // 0 light object index
+    
 
 	// Engine-owned lighting state
     std::unique_ptr<LightManager> m_lightManager; //Lighting
@@ -109,7 +110,7 @@ private:
     float m_pickupRadius = 1.5f;   // distance to auto-pickup health packs
 	// Health pack must be a set size for pickup to work correctly 0.5 x 0.5 x 0.5 centered at origin
     // 
-    /*int m_score = 0;*/
+    
     // 
     // Collision helpers
     bool SphereIntersectsAABB_World(const glm::vec3& sphereCenterWorld, float radius,

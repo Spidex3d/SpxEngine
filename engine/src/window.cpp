@@ -780,7 +780,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 {
                     // TO DO Later
                     // Dispaly types of lighting we can use (directional, point, spot, etc.) as image buttons
-
+					// ImGui::ColorEdit4("Ambient Color", m_ambientColor);
 
                     ImGui::EndTabItem();
                 } // End Lighting Lab

@@ -1,64 +1,61 @@
-#version 460 core
+#version 460
 
-in vec2 vTexCoord;
+in vec3 vFragPos;   // ensure your vertex shader forwards world-space position
 in vec3 vNormal;
-in vec3 vFragPos;
+in vec2 vTexCoord;
+
+uniform sampler2D myTexture;
+uniform vec3 u_ambient;
+
+struct SpotLight {
+    vec3 position;
+    vec3 direction;
+    vec3 color;
+    float cutoffCos;
+    int enabled;
+};
+
+uniform SpotLight u_spotLights[8]; // match MAX_SPOT_LIGHTS
+
+uniform int u_selected;        // selection flag
+uniform vec3 u_highlightColor; // highlight color (rgb)
 
 out vec4 FragColor;
 
-uniform sampler2D myTexture;
-uniform int u_useTexture;
-uniform vec3 u_albedo;
-uniform int u_selected;
-uniform vec3 u_highlightColor;
+void main() {
+    vec3 albedo = texture(myTexture, vTexCoord).rgb;
 
-// NEW:
-uniform float u_shininess;     // specular exponent
-uniform vec3 u_specularColor;  // specular color (RGB)
-uniform vec3 u_viewPos;        // camera/world position
+    // simple ambient
+    vec3 color = albedo * u_ambient;
 
-uniform vec3 u_lightDir = vec3(0.5, 1.0, 0.3);
-uniform vec3 u_lightColor = vec3(1.0);
-
-const float kAmbient = 0.2;
-const float kDiffuse = 0.8;
-
-void main()
-{
-    vec3 baseColor = u_albedo;
-    if (u_useTexture == 1) {
-        vec4 tex = texture(myTexture, vTexCoord);
-        baseColor = tex.rgb;
-    }
-
+    // surface normal
     vec3 N = normalize(vNormal);
-    vec3 L = normalize(u_lightDir);
-    vec3 V = normalize(u_viewPos - vFragPos);
+    vec3 viewDir = normalize(-vFragPos); // assuming camera at origin in world space for simplicity
 
-    float NdotL = max(dot(N, L), 0.0);
-
-    // diffuse
-    vec3 diffuse = baseColor * (kAmbient + kDiffuse * NdotL) * u_lightColor;
-
-    // Blinn-Phong specular
-    vec3 H = normalize(L + V);
-    float NdotH = max(dot(N, H), 0.0);
-    float specFactor = pow(NdotH, u_shininess);
-    vec3 spec = u_specularColor * specFactor * u_lightColor;
-
-    vec3 lit = diffuse + spec;
-
-    if (u_selected == 1) {
-        float highlightMix = 0.35;
-        vec3 blended = mix(lit, u_highlightColor, highlightMix);
-        FragColor = vec4(blended, 1.0);
-    } else {
-        FragColor = vec4(lit, 1.0);
+    // add sloted spot lights
+    for (int i = 0; i < 8; ++i) {
+        if (u_spotLights[i].enabled == 0) continue;
+        vec3 L = normalize(u_spotLights[i].position - vFragPos);
+        float NdotL = max(dot(N, L), 0.0);
+        // spot cutoff test:
+        float spotFactor = dot(normalize(-u_spotLights[i].direction), L);
+        if (spotFactor >= u_spotLights[i].cutoffCos) {
+            // simple diffuse
+            color += albedo * u_spotLights[i].color * NdotL;
+        }
     }
+
+    FragColor = vec4(color, 1.0);
 }
 
 
-
+//  if (u_selected == 1) {
+//        float highlightMix = 0.35;
+//        vec3 blended = mix(lit, u_highlightColor, highlightMix);
+//        FragColor = vec4(blended, 1.0);
+//    } else {
+//        FragColor = vec4(lit, 1.0);
+//    }
 
 //#version 460 core
 

@@ -11,10 +11,11 @@
 #include "../include/globalVar.h"
 #include "../include/shader.h"
 #include "../src/Camera/Camera.h"
-//#include "../src/Sky/skyBox.h"
+#include "../src/Effects/lighting.h"
 
 // Forward-declare Shader to avoid including its header here
 class Shader;
+class LightManager; // forward declare LightManager to avoid including its header here
 struct GameObj { // Any game object not player-related 
 
     virtual ~GameObj() = default; // make polymorphic for safe dynamic_cast
@@ -128,7 +129,7 @@ public:
         int& LightIdx, const glm::vec3& position = glm::vec3(0.0f));
 
     void RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId);
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId);   //LightManager* lightManager
     
     // ############################   END LIGHTING #######################################
 
@@ -326,7 +327,7 @@ public:
         entId = idx;
         entName = name;
         entObjectIndex = LightIdx;
-        entTypeID = OBJ_PLANE; // from globalVar.h = 2
+        entTypeID = OBJ_LIGHT_AMBIENT; // from globalVar.h = 2
 
         // default transform
         position = glm::vec3(0.0f);
