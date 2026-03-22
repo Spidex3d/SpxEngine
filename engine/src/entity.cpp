@@ -691,6 +691,9 @@ void Entity::RenderLightSprite(Shader* shader, const glm::mat4& view, const glm:
     std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId)
 {
     if (!shader) {
+        shader = ShaderManager::Sprite();
+    }
+    if (!shader) {
         LOG_WARNING("Entity::RenderLightSprite called without shader; skipping draw.");
         return;
     }

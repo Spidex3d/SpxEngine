@@ -804,31 +804,6 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 }
 
 
-                //if (ImGui::BeginTabItem("Lighting Lab"))
-                //{
-                //    glm::vec3 amb = m_lightManager->GetGlobalAmbient();
-                //    float ambColor[4] = { amb.r, amb.g, amb.b, 1.0f };
-                //    float ambIntensity = m_lightManager->GetGlobalAmbientIntensity();
-
-                //    ImGui::Begin("Environment Controls");
-
-                //    // ColorEdit4 (alpha isn't used by lighting but useful visually)
-                //    if (ImGui::ColorEdit4("Ambient Color", ambColor)) {
-                //        // user changed color -> update LightManager (keep current intensity)
-                //        m_lightManager->SetGlobalAmbient(glm::vec3(ambColor[0], ambColor[1], ambColor[2]), ambIntensity);
-                //    }
-
-                //    // Intensity slider (expose a reasonable range)
-                //    if (ImGui::SliderFloat("Ambient Intensity", &ambIntensity, 0.0f, 5.0f)) {
-                //        m_lightManager->SetGlobalAmbient(glm::vec3(ambColor[0], ambColor[1], ambColor[2]), ambIntensity);
-                //    }
-
-                //    ImGui::Text("Note: shaders use uniform 'u_ambient'");
-                //    ImGui::End();
-
-                //    ImGui::EndTabItem();
-                //} // End Lighting Lab
-
                 if (ImGui::BeginTabItem("Particles Lab"))
                 {
                     // TO DO Later
@@ -838,7 +813,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                     ImGui::EndTabItem();
                 } // End Particles Lab
 
-                ImGui::EndTabItem();
+                ImGui::EndTabBar();
 
             }
 

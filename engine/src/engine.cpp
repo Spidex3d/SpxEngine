@@ -414,7 +414,9 @@ bool Engine::Initialize(const EngineConfig& config) {
         LOG_INFO("Engine: acquired Sky shader from ShaderManager");
     }
 
-    m_lightManager = std::make_unique<LightManager>(); // Lighting set up
+	// ############################################### Lighting set up new ########################################################
+    m_lightManager = std::make_unique<LightManager>(); 
+    if (window) window->SetLightManager(m_lightManager.get());
         
     window->SetRenderCallback([this]() {
 
@@ -1062,9 +1064,9 @@ void Engine::Run() {
                 // apply to any other shaders that need lighting
             }
 
-            m_lightManager = std::make_unique<LightManager>();
+            //m_lightManager = std::make_unique<LightManager>();
             // expose to UI:
-            if (window) window->SetLightManager(m_lightManager.get());
+            //if (window) window->SetLightManager(m_lightManager.get());
 
 
             // Draw the MainSceneWindow which will call the registered render callback while FBO is bound
