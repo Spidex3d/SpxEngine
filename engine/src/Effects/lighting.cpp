@@ -3,10 +3,23 @@
 LightManager::LightManager() = default;
 LightManager::~LightManager() = default;
 
-int LightManager::AddAmbient(const glm::vec3& color, float intensity) {
+int LightManager::AddAmbient(const glm::vec3& apos, const glm::vec3& color, float intensity) {
+    // If an ambient light already exists, update it and return its id
+    for (auto& l : m_lights) {
+        if (l.type == LightType::Ambient) {
+            // update existing ambient
+            l.color = color;
+            l.intensity = intensity;
+            l.enabled = true;
+            LOG_INFO("LightManager: updated existing ambient light id=" << l.id);
+            return l.id;
+        }
+    }
+
     Light L;
     L.id = m_nextId++;
     L.type = LightType::Ambient;
+    L.position = apos;
     L.color = color;
     L.intensity = intensity;
     L.enabled = true;
@@ -70,16 +83,7 @@ void LightManager::ApplyToShader(Shader* shader) {
     shader->Use();
     shader->setVec3("u_ambient", ambientSum);
 
-    //// Aggregate ambient contribution from ambient lights
-    //glm::vec3 ambientSum(0.0f);
-    //for (const auto& l : m_lights) {
-    //    if (!l.enabled) continue;
-    //    if (l.type == LightType::Ambient) {
-    //        ambientSum += l.color * l.intensity;
-    //    }
-    //}
-    //shader->Use();
-    //shader->setVec3("u_ambient", ambientSum);
+    
 
     // Collect up to MAX_SPOT_LIGHTS spots
     int slot = 0;

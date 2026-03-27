@@ -32,6 +32,7 @@ extern std::string modelPathGltf;
 
 
 // Lighting
+extern const int OBJ_LIGHT;
 extern const int OBJ_LIGHT_AMBIENT;
 extern const int OBJ_LIGHT_SPOT;
 
@@ -42,5 +43,5 @@ extern const int OBJ_FLOOR;
 
 // Skybox types
 extern const int SKY_OBJ; // for skybox
-//extern const int SKYA_OBJ; // reserved for special skybox objects
-//extern const int SKYB_OBJ; // reserved for skybox PBR version with multiple textures (albedo, normal, roughness etc)
+//extern const int SKY_DOME_OBJ; // reserved for special skybox objects
+//extern const int SKY_PBR_OBJ; // reserved for skybox PBR version with multiple textures (albedo, normal, roughness etc)

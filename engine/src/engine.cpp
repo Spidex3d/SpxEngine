@@ -616,6 +616,7 @@ bool Engine::Initialize(const EngineConfig& config) {
             return; // handled
         }
         //##################################################### End Texture ###########################################
+        
         // ################################### Lighting ################################################# 
 		// We will need to set a flag to identify light entities so they can be rendered differently
         // (e.g. sprite image) and excluded from certain operations at run/play time.
@@ -623,9 +624,15 @@ bool Engine::Initialize(const EngineConfig& config) {
         if (cmd.rfind(addLightPrefix, 0) == 0) {
             std::string payload = cmd.substr(addLightPrefix.size()); // "Ambient" or "Spot"
             if (payload == "Ambient") {
-                int id = m_lightManager->AddAmbient(glm::vec3(1.0f), 0.2f);
-                // create a small cube for visual: use Entity::CreateCube and scale it small / maybe a special color
-                m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, glm::vec3(0.0f));
+                glm::vec3 apos(0.0f, 3.0f, 0.0f);
+                int id = m_lightManager->AddAmbient(apos, glm::vec3(1.0f), 0.2f);
+                Light* L = m_lightManager->GetLight(id);
+                if (L && L->linkedEntityIndex == -1) {
+                    m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, apos, LightType::Ambient);
+                    int newIndex = (int)m_entities.size() - 1;
+                    if (newIndex >= 0 && L) L->linkedEntityIndex = newIndex;
+                }
+
                 int newIndex = static_cast<int>(m_entities.size()) - 1;
                 if (newIndex >= 0) {
                     GameObj* g = m_entities[newIndex].get();
@@ -644,7 +651,7 @@ bool Engine::Initialize(const EngineConfig& config) {
                 glm::vec3 dir(0.0f, -1.0f, 0.0f);
                 int id = m_lightManager->AddSpot(pos, dir, glm::vec3(1.0f), 1.0f, 0.95f);
                 // create visual marker as above
-                m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, pos);
+                m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, pos, LightType::Spot, "");
                 int newIndex = static_cast<int>(m_entities.size()) - 1;
                 if (newIndex >= 0) {
                     GameObj* g = m_entities[newIndex].get();
@@ -652,6 +659,7 @@ bool Engine::Initialize(const EngineConfig& config) {
                         g->scale = glm::vec3(0.25f);
                         g->modelMatrix = glm::translate(glm::mat4(1.0f), g->position);
                         g->modelMatrix = glm::scale(g->modelMatrix, g->scale);
+
                         Light* L = m_lightManager->GetLight(id);
                         if (L) L->linkedEntityIndex = newIndex;
                     }
@@ -929,6 +937,7 @@ void Engine::Run() {
                         if (selected->tex_ID != 0) {
                             ImGui::Text("Preview:");
                             ImGui::Image((void*)(intptr_t)selected->tex_ID, ImVec2(128, 128));
+                            
                         }
 
                         // Change texture button

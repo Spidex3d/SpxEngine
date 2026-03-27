@@ -23,13 +23,14 @@ const int OBJ_OBJ_MODEL = 15; // generic OBJ model loaded from file.
 const int GLTF_OBJ_MODEL = 16; // generic GLTF model loaded from file.
 
 const int SKY_OBJ = 30; // for skybox
-//const int SKYA_OBJ = 31; // reserved for special skybox objects
-//const int SKYB_OBJ = 32; // reserved for skybox PBR version with multiple textures (albedo, normal, roughness etc)
+//const int SKY_DOME_OBJ = 31; // reserved for special skybox objects
+//const int SKY_PBR_OBJ = 32; // reserved for skybox PBR version with multiple textures (albedo, normal, roughness etc)
 
 std::string modelPathObj = "";
 
 const int OBJ_FLOOR = 20; // a large plane to serve as the floor.
 // Lighting
-const int OBJ_LIGHT_AMBIENT = 40;
-const int OBJ_LIGHT_SPOT = 41;
+const int OBJ_LIGHT = 40;
+const int OBJ_LIGHT_AMBIENT = 41;
+const int OBJ_LIGHT_SPOT = 42;
 

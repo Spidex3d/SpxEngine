@@ -651,213 +651,105 @@ void Entity::RenderFloor(Shader* shader, const glm::mat4& view, const glm::mat4&
     shader->SetUniformInt("u_selected", 0);
 
 }
-// ############################################## Light Sprite ##############################################
-
-void Entity::CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector,
-    int& currentIndex, int& LightIdx, const glm::vec3& position)
+void Entity::CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx,
+    const glm::vec3& position, LightType type, const std::string& texFilename)
 {
     stbi_set_flip_vertically_on_load(true);
-
-    auto newLight = std::make_unique<LightSprite>(currentIndex, "Default Light", LightIdx);
-
-   newLight->position = position;
-   newLight->scale = glm::vec3(1.0f);
-
-    // Build TRS: translate * rotate * scale (no rotation here)
-    newLight->modelMatrix = glm::translate(glm::mat4(1.0f), newLight->position);
-    newLight->modelMatrix = glm::scale(newLight->modelMatrix, newLight->scale);
-
-    // Load texture via SetTextureForGameObj
-	// presudo code change image to sun image
-	// if (lightFlag == 1) { set sun texture } else { set spot texture }
-	// this way we can reuse the same light sprite for different types of lights by just changing the texture
-    std::string texPath = GetAssetPath(LIGHT_PATH);
-    std::string texFile = "sun_01.png";
-    std::string full = texPath + texFile;
-
-    if (!SetTextureForGameObj(newLight.get(), full)) {
-        LOG_WARNING("CreateLightSprite: Failed to set texture: " << full);
-    }
-    else {
-        LOG_INFO("CreateLightSprite: texture loaded tex_ID=" << newLight->tex_ID << " path=" << newLight->texPath);
-    }
-
-    entVector.push_back(std::move(newLight));
-    ++currentIndex;
-    ++LightIdx;
+    
+        // Choose a friendly name depending on type
+        std::string name;
+        std::string texFile;
+        switch (type) {
+        case LightType::Ambient:
+            name = "Ambient Light";
+            texFile = texFilename.empty() ? "sun_01.png" : texFilename;
+            break;
+        case LightType::Spot:
+            name = "Spot Light";
+            texFile = texFilename.empty() ? "Spot_01.png" : texFilename;
+            break;
+        default:
+            name = "Light";
+            texFile = texFilename.empty() ? "sun_01.png" : texFilename;
+            break;
+        }
+    
+        auto newLight = std::make_unique<LightSprite>(currentIndex, name, LightIdx);
+    
+        newLight->position = position;
+        newLight->scale = glm::vec3(1.0f);
+    
+        // Build TRS: translate * scale
+        newLight->modelMatrix = glm::translate(glm::mat4(1.0f), newLight->position);
+        newLight->modelMatrix = glm::scale(newLight->modelMatrix, newLight->scale);
+    
+        // Load texture via SetTextureForGameObj using a path from your assets (TEXTURE_PATH / LIGHT_PATH)
+        std::string texPath = GetAssetPath(LIGHT_PATH); // LIGHT_PATH constant you used earlier
+        std::string full = texPath + texFile;
+    
+        if (!SetTextureForGameObj(newLight.get(), full)) {
+            LOG_WARNING("CreateLightSprite: Failed to set texture: " << full);
+        }
+        else {
+            LOG_INFO("CreateLightSprite: texture loaded tex_ID=" << newLight->tex_ID << " path=" << newLight->texPath);
+        }
+    
+        // Optionally store type on the GameObj (add a small int field if you want). For now, entName differentiates.
+        entVector.push_back(std::move(newLight));
+        ++currentIndex;
+        ++LightIdx;
 }
 
+
 void Entity::RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId)
+    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId, LightManager* lm)
 {
     if (!shader) {
         shader = ShaderManager::Sprite();
     }
     if (!shader) {
-        LOG_WARNING("Entity::RenderLightSprite called without shader; skipping draw.");
+        LOG_WARNING("Entity::RenderLightSprite: no sprite shader available; skipping");
         return;
     }
 
-    // set projection/view and common uniforms
+    shader->Use();
+    // set common uniforms (myTexture/unit 0, projection/view)
     loadShader(shader, view, projection);
 
-    // Sprite shader expects: view, projection (set by loadShader), plus:
-    // uniform vec3 lightPos;
-    // uniform float scale;
-    // uniform sampler2D spriteTexture;
+    // If sprite shader needs specific uniforms: lightPos and scale are defined in sprite.vert
+    // We'll set them per-sprite below before drawing each sprite.
+
     for (const auto& model : entVector) {
         if (!model) continue;
         if (!model->isVisible) continue;
-
         if (auto* light = dynamic_cast<LightSprite*>(model.get())) {
-            // compute world-space center of entity
-            glm::vec3 worldPos = glm::vec3(light->modelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            // compute world-space position (stored in model->position)
+            shader->setMat4("model", light->modelMatrix);
 
-            shader->Use();
-            shader->setMat4("model", light->modelMatrix); // optional: if your sprite shader uses model
-            shader->setVec3("lightPos", worldPos);
-            // pick a scale factor (use X component of scale or average)
-            float s = (light->scale.x + light->scale.y + light->scale.z) / 3.0f;
-            shader->SetUniformFloat("scale", s);
+            // for the sprite.vert inputs:
+            // set the lightPos uniform (vec3)
+            shader->setVec3("lightPos", light->position);
+            // set the scale uniform (float)
+            shader->SetUniformFloat("scale", light->scale.x); // assuming uniform scale.x
 
-            // Bind the sprite texture (from GameObj::tex_ID) to unit 0 and set uniform sampler
-            if (light->tex_ID != 0) {
+            shader->SetUniformInt("u_useTexture", light->tex_ID ? 1 : 0);
+            if (light->tex_ID) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, light->tex_ID);
+                // Ensure sprite shader samples the uniform name used in fragment: 'spriteTexture'
+                // your Shader class SetUniformInt("spriteTexture", 0) might be necessary once - loadShader currently sets "myTexture". If sprite shader uses 'spriteTexture', set it here:
                 shader->SetUniformInt("spriteTexture", 0);
             }
 
-            // draw the quad
             light->DrawLight();
 
-            // unbind texture
-            if (light->tex_ID != 0) {
-                glBindTexture(GL_TEXTURE_2D, 0);
-            }
+            if (light->tex_ID) glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
+
+
 }
 
-//void Entity::RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-//    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId,
-//    LightManager* lightManager)
-//{
-//    if (!shader) {
-//        LOG_WARNING("Entity::RenderLightSprite called without shader; skipping draw.");
-//        return;
-//    }
-//    // Use the provided shader
-//    shader->Use();
-//
-//    // Set common matrices (sprite.vert expects view & projection)
-//    shader->setMat4("view", view);
-//    shader->setMat4("projection", projection);
-//
-//    // Iterate by index so we can match entity index with LightManager->linkedEntityIndex
-//    for (int i = 0; i < (int)entVector.size(); ++i) {
-//        auto& modelPtr = entVector[i];
-//        if (!modelPtr) continue;
-//        if (!modelPtr->isVisible) continue;
-//
-//        // Only render LightSprite instances
-//        if (auto* lightSprite = dynamic_cast<LightSprite*>(modelPtr.get())) {
-//
-//            // Determine light position: prefer LightManager's linked Light if present
-//            glm::vec3 lightPosWorld = glm::vec3(lightSprite->modelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-//            if (lightManager) {
-//                Light* linked = lightManager->FindByEntityIndex(i);
-//                if (linked) {
-//                    lightPosWorld = linked->position;
-//                }
-//            }
-//
-//            // Pass per-sprite uniforms expected by sprite.vert/frag
-//            shader->SetUniformInt("spriteTexture", 0); // sampler unit 0
-//            shader->setVec3("lightPos", lightPosWorld);
-//            // use the X scale component as uniform 'scale' (vertex shader multiplies aPos by scale)
-//            float scale = (lightSprite->scale.x != 0.0f) ? lightSprite->scale.x : 1.0f;
-//            shader->SetUniformFloat("scale", scale);
-//
-//            // Bind sprite texture if present
-//            bool hasTex = (lightSprite->tex_ID != 0);
-//            if (hasTex) {
-//                glActiveTexture(GL_TEXTURE0);
-//                glBindTexture(GL_TEXTURE_2D, lightSprite->tex_ID);
-//            }
-//
-//            // Set model matrix if the sprite shader needs it (your sprite.vert uses view & projection + lightPos + scaled aPos)
-//            // If you also want to account for per-object offsets, ensure modelMatrix is correct; the shader currently uses lightPos.
-//            // Draw the quad
-//            lightSprite->DrawLight();
-//
-//            // Unbind texture
-//            if (hasTex) {
-//                glBindTexture(GL_TEXTURE_2D, 0);
-//            }
-//        }
-//    }
-//}
-
-//void Entity::RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-//    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId, LightManager* lightManager)
-//{
-//    // allow caller to pass nullptr -> use Sprite shader from ShaderManager
-//    if (!shader) {
-//        shader = ShaderManager::Sprite();
-//    }
-//    if (!shader) {
-//        LOG_WARNING("Entity::RenderLightSprite: no sprite shader available; skipping");
-//        return;
-//    }
-//
-//    // Use the shader and set common uniforms
-//    shader->Use();
-//    // set view/projection and common uniforms (loadShader sets projection/view and sampler 'myTexture')
-//    loadShader(shader, view, projection);
-//
-//    // sprite shader uses sampler 'spriteTexture' and per-sprite uniforms 'lightPos' and 'scale'
-//    shader->SetUniformInt("spriteTexture", 0);
-//
-//    // Optionally disable depth test for debugging to make sure sprite is visible
-//    // glDisable(GL_DEPTH_TEST);
-//
-//    for (const auto& model : entVector) {
-//        if (!model) continue;
-//        if (!model->isVisible) continue;
-//
-//        // Only render LightSprite objects
-//        if (auto* light = dynamic_cast<LightSprite*>(model.get())) {
-//            // set per-sprite uniforms used by your vertex shader
-//            // light->position is in world space (vec3)
-//            shader->setVec3("lightPos", light->position);
-//
-//            // vertex shader expects float scale (you can use X component or average)
-//            float uniScale = (light->scale.x + light->scale.y + light->scale.z) / 3.0f;
-//            if (uniScale <= 0.0f) uniScale = 1.0f;
-//            shader->SetUniformFloat("scale", uniScale);
-//
-//            // Bind texture (if available)
-//            if (light->tex_ID) {
-//                glActiveTexture(GL_TEXTURE0);
-//                glBindTexture(GL_TEXTURE_2D, light->tex_ID);
-//            }
-//
-//            // Draw the sprite quad (DrawLight uses VAO/elements)
-//            light->DrawLight();
-//
-//            // unbind texture
-//            if (light->tex_ID) {
-//                glBindTexture(GL_TEXTURE_2D, 0);
-//            }
-//        }
-//    }
-//
-//    // restore GL state if modified
-//    // glEnable(GL_DEPTH_TEST);
-//
-//    // reset selection uniform (optional)
-//    shader->SetUniformInt("u_selected", 0);
-//}
 
 
 // ############################################## End Light Sprite ##############################################

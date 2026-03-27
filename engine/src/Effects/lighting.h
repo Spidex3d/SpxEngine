@@ -35,7 +35,7 @@ public:
     ~LightManager();
 
     // Add convenience helpers - they return assigned light id
-    int AddAmbient(const glm::vec3& color = glm::vec3(1.0f), float intensity = 0.2f);
+    int AddAmbient(const glm::vec3& apos, const glm::vec3& color = glm::vec3(1.0f), float intensity = 0.2f);
     int AddSpot(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& color = glm::vec3(1.0f), float intensity = 1.0f, float cutoffCos = 0.95f);
 
     bool RemoveLight(int id);

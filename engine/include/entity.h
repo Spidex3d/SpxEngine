@@ -16,6 +16,7 @@
 // Forward-declare Shader to avoid including its header here
 class Shader;
 class LightManager; // forward declare LightManager to avoid including its header here
+enum class LightType : int;
 struct GameObj { // Any game object not player-related 
 
     virtual ~GameObj() = default; // make polymorphic for safe dynamic_cast
@@ -125,12 +126,18 @@ public:
 
 
     // ############################   LIGHTING #######################################
-    void CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
-        int& LightIdx, const glm::vec3& position = glm::vec3(0.0f));
+    void CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector,
+        int& currentIndex, int& LightIdx, const glm::vec3& position, LightType type,
+        const std::string& texFilename = "");
+
+   /* void CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector,
+        int& currentIndex, int& LightIdx, const glm::vec3& position, LightType type);*/
 
     void RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
-        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx, int& selectedEntityId);   //LightManager* lightManager
-    
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx,
+        int& selectedEntityId, LightManager* lm = nullptr);
+
+
     // ############################   END LIGHTING #######################################
 
     bool SetTextureForGameObj(GameObj* obj, const std::string& path);
@@ -327,7 +334,7 @@ public:
         entId = idx;
         entName = name;
         entObjectIndex = LightIdx;
-        entTypeID = OBJ_LIGHT_AMBIENT; // from globalVar.h = 2
+        entTypeID = OBJ_LIGHT; // from globalVar.h = 40
 
         // default transform
         position = glm::vec3(0.0f);
