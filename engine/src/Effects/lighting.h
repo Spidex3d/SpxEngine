@@ -67,5 +67,5 @@ private:
     glm::vec3 m_globalAmbient = glm::vec3(0.0f);
     float m_globalAmbientIntensity = 0.0f;
  
-    static constexpr int MAX_SPOT_LIGHTS = 8;
+    static constexpr int MAX_SPOT_LIGHTS = 2; // was 8
 };

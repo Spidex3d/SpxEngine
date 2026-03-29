@@ -224,6 +224,10 @@ bool Engine::LoadScene(const std::string& path)
 		int typeId = je.value("typeId", 0);
         std::string asset = je.value("assetPath", std::string());
 
+        if (typeId == OBJ_TILE) {
+			// For tiles, we can check the asset path for a specific tile type if needed (e.g. floor vs wall), but for now we'll just create a generic tile
+			AddTile(pos);
+        }
         // create appropriate entity based on type
         if (typeId == OBJ_CUBE) {
             AddCube(pos);
@@ -262,6 +266,21 @@ bool Engine::LoadScene(const std::string& path)
                 }
             }
         }
+        else if (typeId == OBJ_LIGHT) {
+            // create a light entity (not rendered like other GameObjs, but we want to track it in the scene and inspector)
+            if (m_entity) {
+				m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, pos, LightType::Ambient);
+                m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+                if (m_selectedEntityIndex >= 0 && m_selectedEntityIndex < (int)m_entities.size()) {
+                    GameObj* g = m_entities[m_selectedEntityIndex].get();
+                    if (g) {
+                        g->entTypeID = OBJ_LIGHT;
+                        g->assetPath = asset;
+                    }
+                }
+            }
+        }
+
         else if (typeId == SKY_OBJ) {
             if (m_entity) {
                 m_entity->CreateSkyBox(m_entities, m_currentEntityIndex, m_skyIdx, asset, glm::vec3(0.0f));
@@ -316,7 +335,7 @@ bool Engine::LoadScene(const std::string& path)
 
 
         
-        // #######################################################
+		// ########################################## End Loading one entity, loop to next ##########################################
     }
 
     // After loading, clear selection
@@ -386,7 +405,7 @@ bool Engine::Initialize(const EngineConfig& config) {
     m_entity = std::make_unique<Entity>();
     m_entities.clear();
     m_currentEntityIndex = 0;
-    m_cubeObjIdx = 0;
+    m_tileObjIdx = 0;
 	m_cubeObjIdx = 0;
     m_planeObjIdx = 0;
 	m_floorObjIdx = 0;
@@ -479,6 +498,7 @@ bool Engine::Initialize(const EngineConfig& config) {
             m_entity->RenderCube(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_cubeObjIdx, selectedEntityId);
             m_entity->RenderPlane(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_planeObjIdx, selectedEntityId);
             //m_entity->RenderLightSprite(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_lightObjIdx, selectedEntityId);
+            m_entity->RenderTile(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_tileObjIdx, selectedEntityId);
             m_entity->RenderFloor(m_planeShader, view, projection, m_entities, m_currentEntityIndex, m_floorObjIdx, selectedEntityId);
         }
 
@@ -650,6 +670,9 @@ bool Engine::Initialize(const EngineConfig& config) {
                 glm::vec3 pos(0.0f, 2.0f, 0.0f);
                 glm::vec3 dir(0.0f, -1.0f, 0.0f);
                 int id = m_lightManager->AddSpot(pos, dir, glm::vec3(1.0f), 1.0f, 0.95f);
+                // ##############
+               
+                // ##############
                 // create visual marker as above
                 m_entity->CreateLightSprite(m_entities, m_currentEntityIndex, m_lightObjIdx, pos, LightType::Spot, "");
                 int newIndex = static_cast<int>(m_entities.size()) - 1;
@@ -734,7 +757,10 @@ bool Engine::Initialize(const EngineConfig& config) {
         
    
         
-
+        if (cmd == "AddTile") {
+            // place at center by default
+            AddTile(glm::vec3(0.0f, 0.0f, 0.0f));
+        }
 
         if (cmd == "AddCube") {
             // place at center by default
@@ -1228,6 +1254,24 @@ void Engine::AddObj(const std::string& modelPath, const glm::vec3& pos)
 }
 
 // ######### This is where we add all the object to the game world #########
+void Engine::AddTile(const glm::vec3& pos)
+{
+    // Check that m_entity is valid
+    if (!m_entity) return;
+
+    // Create the Tile (appends into m_entities)
+    m_entity->CreateTile(m_entities, m_currentEntityIndex, m_tileObjIdx, pos, true, "");
+
+    // Select the newly added entity so the Inspector opens
+    m_selectedEntityIndex = static_cast<int>(m_entities.size()) - 1;
+
+    // Bring the inspector window to front (works while ImGui frame is active)
+    ImGui::SetWindowFocus("Object Inspector");
+
+}
+
+
+
 void Engine::AddCube(const glm::vec3& pos)
 {
 	// Check that m_entity is valid

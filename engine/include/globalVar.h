@@ -8,6 +8,7 @@ extern const float DEFAULT_ROT_SPEED_DEG; // degrees per second for rotation of 
 constexpr const char* TEXTURE_PATH = "assets/textures/texture/";
 constexpr const char* SHADER_PATH = "Shaders/";
 constexpr const char* LIGHT_PATH = "src/Effects/";
+constexpr const char* SCENE_PATH = "Scene_Files/";
 
 extern bool ShouldAddSkyBox; // if set to true add skybox images to buttons
 extern bool ShouldAddTextures; // if set to true add textures to buttons in asset browser tab
@@ -40,6 +41,7 @@ extern const int OBJ_LIGHT_SPOT;
 
 
 extern const int OBJ_FLOOR;
+extern const int OBJ_TILE;
 
 // Skybox types
 extern const int SKY_OBJ; // for skybox

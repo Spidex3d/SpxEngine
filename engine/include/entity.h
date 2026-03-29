@@ -118,6 +118,14 @@ public:
     void RenderPlane(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& PlaneObjIdx, int& selectedEntityId);
 
+    // ############################################# Floor & Terran #############################################
+    void CreateTile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
+        int& tileIdx, const glm::vec3& position, bool includeSides, const std::string& topTexturePath);
+
+    void RenderTile(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+        std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& tileIdx, int& selectedEntityId);
+
+
     void CreateFloor(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex,
         int& FloorObjIdx, const glm::vec3& position = glm::vec3(0.0f));
 
@@ -129,9 +137,6 @@ public:
     void CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector,
         int& currentIndex, int& LightIdx, const glm::vec3& position, LightType type,
         const std::string& texFilename = "");
-
-   /* void CreateLightSprite(std::vector<std::unique_ptr<GameObj>>& entVector,
-        int& currentIndex, int& LightIdx, const glm::vec3& position, LightType type);*/
 
     void RenderLightSprite(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
         std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& LightIdx,
@@ -250,8 +255,112 @@ public:
     }
 private:
 };
+// Tile cube with optional sides - can be used for floor tiles, walls, platforms etc.
+class TerrainTile : public GameObj {
+public:
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+    //bool includeSides = false;
+    bool includeSides = true;
 
+    // tileSizeX,Z is half-size or full size depending how you want - this uses full extents of 1.0 unit tile centered at origin
+    TerrainTile(int idx, const std::string& name, int tileIdx, bool sides = false) {
+        entId = idx;
+        entName = name;
+        entObjectIndex = tileIdx;
+        entTypeID = OBJ_TILE; // or define a new OBJ_TILE
 
+        includeSides = sides;
+
+        // Build geometry: top quad + optional side quads
+        // Vertex layout: pos.x,pos.y,pos.z, normal.x,normal.y,normal.z, tex.u,tex.v
+        // Top quad = 2 tris (4 verts)
+        std::vector<float> verts;
+        std::vector<unsigned int> indices;
+
+        // top y at +0.05 (tile thickness small)
+        float halfX = 0.5f;
+        float halfZ = 0.5f;
+        float topY = 0.05f;
+
+        // top verts (CCW)
+        // 0
+        verts.insert(verts.end(), { -halfX, topY,  halfZ,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f });
+        // 1
+        verts.insert(verts.end(), { halfX, topY,  halfZ,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f });
+        // 2
+        verts.insert(verts.end(), { halfX, topY, -halfZ,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f });
+        // 3
+        verts.insert(verts.end(), { -halfX, topY, -halfZ,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f });
+
+        indices.insert(indices.end(), { 0, 1, 3,   1, 2, 3 });
+
+        if (includeSides) {
+            // make thin vertical sides (normals outward), reuse texture coords for side if needed
+            // front side (z = +halfZ) (verts 4..7)
+            float bottomY = 0.0f;
+            // front
+            verts.insert(verts.end(), { -halfX, topY,  halfZ,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f });
+            verts.insert(verts.end(), { halfX, topY,  halfZ,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f });
+            verts.insert(verts.end(), { halfX, bottomY, halfZ,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f });
+            verts.insert(verts.end(), { -halfX, bottomY, halfZ,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f });
+            unsigned int base = 4; // starting index for front
+            indices.insert(indices.end(), { base + 0, base + 1, base + 3,  base + 1, base + 2, base + 3 });
+
+            // right side (x = +halfX)
+            float b = (float)verts.size() / 8.0f; // but easier compute base offset manually:
+            // append other sides similarly...
+            // For brevity copy the pattern for 3 more sides (right, back, left).
+            // In production: write a small helper to push side quads to verts/indices.
+        }
+
+        // Upload buffers
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        // attr 0 pos (3 floats)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        // attr 1 normal
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        // attr 2 texcoord
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+
+        glBindVertexArray(0);
+
+        // store counts for draw
+        m_indexCount = (GLsizei)indices.size();
+
+        // default transform
+        position = glm::vec3(0.0f);
+        scale = glm::vec3(1.0f);
+        modelMatrix = glm::mat4(1.0f);
+    }
+
+    ~TerrainTile() {
+        if (VAO) { glDeleteVertexArrays(1, &VAO); VAO = 0; }
+        if (VBO) { glDeleteBuffers(1, &VBO); VBO = 0; }
+        if (EBO) { glDeleteBuffers(1, &EBO); EBO = 0; }
+    }
+
+    void DrawTile() {
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+private:
+    GLsizei m_indexCount = 0;
+};
 
 
 class PlaneModel : public GameObj {

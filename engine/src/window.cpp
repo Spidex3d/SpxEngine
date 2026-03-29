@@ -409,6 +409,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         }
         
         if (ImGui::BeginMenu("Add a new mesh")) {
+            
             if (ImGui::MenuItem("Cube")) {
                 // Request engine to add a cube via action callback
                 if (m_actionCallback) m_actionCallback("AddCube");               				                
@@ -432,11 +433,20 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
             if (ImGui::MenuItem("Spot")) {
                 if (m_actionCallback) m_actionCallback("AddLight:Spot");
             }
+
+            if (ImGui::MenuItem("Area")) {
+              //  if (m_actionCallback) m_actionCallback("AddLight:Area");
+            }
             ImGui::EndMenu();
         }
 
 		if (ImGui::BeginMenu("Terrain")) {
-			
+
+            if (ImGui::MenuItem("Tile")) {
+                // Request engine to add a cube via action callback
+                if (m_actionCallback) m_actionCallback("AddTile");
+            }
+
             if (ImGui::MenuItem("Add Floor")) {
                 if (m_actionCallback) m_actionCallback("AddFloor");
             }
@@ -666,7 +676,7 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                 ImGui::TextWrapped("Hi I'm The Dyslexic Programmer.I'm not really a programmer, I'm a retired horticulturist."
                     "iv only played with C++ and found it very interesting,"
                     "so now I have lots of time to try and learn this stuff."
-                    "my aim is to go from all but zero to making a 3d Model Editor using Opengl."
+                    "my aim is to go from all but zero to making a 3d Game Engine using Opengl."
                 );
                 ImGui::SeparatorText( " GitHub ");
                 ImGui::Text("https://github.com/Spidex3d/SpxEngine");
@@ -736,6 +746,17 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                        //for (const auto& st : cachedSkies) {
                        for (const auto& st : skyTexture) {
                            ImGui::PushID(st.id);
+                           ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+                           ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+
+
+                           ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // normal
+                           ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f)); // hover
+                           ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f)); // active/click
+                           ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f)); // active/click
+
+                           ImGui::GetStyle().FrameBorderSize = 0.3f; // Add a border to the button
+                           ImGui::GetStyle().FrameRounding = 6.0f; // rounded corners of buttons
                        
                            // Use the preview texture (frontFaceTexID). If zero, show a placeholder button.
                            if (st.frontFaceTexID != 0) {
@@ -762,7 +783,8 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
                                }
                        
                            }
-                       
+                           ImGui::PopStyleVar(2);
+                           ImGui::PopStyleColor(4); // pop all 4 pushed colors has to match top
                            ImGui::PopID();
                            // layout: 3 columns
                            if (++count % columns != 0) ImGui::SameLine();
@@ -832,16 +854,90 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
         if (ImGui::BeginTabBar("##MainEnviro", ImGuiTabBarFlags_None))
             if (ImGui::BeginTabItem("Level Template"))
             {
-                // TO DO Later
                 // Dispaly types of Levels to set up ie: Blank, default, FPS, Top Down, ect; we can use as image buttons
-                
-              // ImGui::Button((std::string(ICON_MY_LOAD) + " Load").c_str());
-                ImGui::Button(ICON_MY_ADD_NEW   " Add New");
-                ImGui::Button(ICON_MY_REMOVE    " Remove");
-                ImGui::Button(ICON_MY_LOAD      " Load");
-                ImGui::Button(ICON_MY_SAVE      " Save");
-                ImGui::Button(ICON_MY_SKY       " Sky");
-                ImGui::Button(ICON_MY_TERRAIN   " Terrain");
+				// Look in Scene_Files for .spxscene files and display them as image buttons with a preview image if available,
+                // clicking a button will load the scene via action callback to engine.
+               // std::string SceneSelected = "C://Users//marty//Desktop//SPXEngine//SPXEngine//SpxEngine//engine//Scene_Files//";
+                std::string SceneSelected = GetAssetPath(SCENE_PATH);
+                if (!SceneSelected.empty()) {
+                    // Free previously cached previews to avoid leaks (must be called with GL context)
+                    //FreeTexTextureList(texTexture);
+                    FreeTexTextureList(m_texTextures);
+
+                    // Load new previews (this will create GL textures and return vector)
+                   // texTexture = TextureManager::LoadTexturesFromDirectory(picked);
+                    m_texTextures = TextureManager::LoadTexturesFromDirectory(SceneSelected);
+                    LOG_INFO("AssetBrowser: loaded " << m_texTextures.size() << " textures from " << SceneSelected);
+                }
+                else {
+                    LOG_INFO("AssetBrowser: openFolderDialog cancelled or no folder selected");
+                }
+                const ImVec2 previewSize(64, 64);
+                int columns = 6;
+                int count = 0;
+
+                for (const auto& st : m_texTextures) {
+                    ImGui::PushID(st.id);
+
+                    // style used in your original code (optional)
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.16f, 0.70f, 0.16f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.10f, 0.50f, 0.10f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.8f, 1.0f));
+                    ImGui::GetStyle().FrameBorderSize = 0.3f;
+                    ImGui::GetStyle().FrameRounding = 6.0f;
+
+                    // Group button+label so layout stays together
+                    ImGui::BeginGroup();
+
+                    bool clicked = false;
+                    if (st.TexFaceTexID != 0) {
+                        // ImageButton returns true when clicked
+                        if (ImGui::ImageButton((void*)(intptr_t)st.TexFaceTexID, previewSize, ImVec2(0, 1), ImVec2(1, 0))) {
+                            clicked = true;
+                        }
+                    }
+                    else {
+                        // placeholder if no preview
+                        if (ImGui::Button("No Preview", previewSize)) {
+                            clicked = true;
+                        }
+                    }
+
+                    // filename to show under the preview: use the image file's stem and show .spxscene
+                    std::string stem = std::filesystem::path(st.path).stem().string();
+                    std::string sceneLabel = stem + ".spxscene";
+
+                    // center the label under the image
+                    ImVec2 textSize = ImGui::CalcTextSize(sceneLabel.c_str());
+                    float offset = (previewSize.x - textSize.x) * 0.5f;
+                    if (offset > 0.0f) {
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+                    }
+					ImGui::TextWrapped("%s", sceneLabel.c_str()); // long names will wrap under the button, which is why we use TextWrapped here instead of Text
+
+                    ImGui::EndGroup();
+
+                    // handle click after grouping so you can reuse same click logic
+                    if (clicked && m_actionCallback) {
+                        std::string scenePath = st.path.substr(0, st.path.find_last_of('.')) + ".spxscene";
+                        LOG_INFO("AssetBrowser: requested Scene File for " << st.path.c_str());
+                        m_actionCallback(std::string("LoadScene") + scenePath);
+                    }
+
+                    // clean up style & ID
+                    ImGui::PopStyleVar(2);
+                    ImGui::PopStyleColor(4);
+                    ImGui::PopID();
+
+                    // layout in columns
+                    if (++count % columns != 0) ImGui::SameLine();
+                }
+
+       
+              
 
                 ImGui::EndTabItem();
             } // End Level Lab
@@ -933,8 +1029,21 @@ void SpxWindow::MainSceneWindow(GLFWwindow* window)
 
                 ImGui::EndTabItem();
             } // End Gltf Lab
+            if (ImGui::BeginTabItem("Test Lab"))
+            {
+                // TO DO Later
+                // Dispaly types of Materials we can use as image buttons
+                // ImGui::Button((std::string(ICON_MY_LOAD) + " Load").c_str());
+                ImGui::Button(ICON_MY_ADD_NEW   " Add New");
+                ImGui::Button(ICON_MY_REMOVE    " Remove");
+                ImGui::Button(ICON_MY_LOAD      " Load");
+                ImGui::Button(ICON_MY_SAVE      " Save");
+                ImGui::Button(ICON_MY_SKY       " Sky");
+                ImGui::Button(ICON_MY_TERRAIN   " Terrain");
 
-            ImGui::EndTabItem();
+                ImGui::EndTabItem();
+            }
+			ImGui::EndTabBar();
 
 		ImGui::End();
 

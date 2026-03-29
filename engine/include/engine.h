@@ -53,6 +53,8 @@ public:
     void AddGltf(const std::string& modelPath, const glm::vec3& pos);
 	void AddObj(const std::string& modelPath, const glm::vec3& pos); // Add an obj model to the scene at the given position (default center)
 
+    void AddTile(const glm::vec3& pos = glm::vec3(0.0f));
+
     void AddCube(const glm::vec3& pos = glm::vec3(0.0f));
     // Add a plane to the scene at the given position (default center)
     void AddPlane(const glm::vec3& pos = glm::vec3(0.0f));
@@ -84,8 +86,9 @@ private:
     std::vector<std::unique_ptr<GameObj>> m_entities;
     int m_currentEntityIndex; //0
    
-    int m_planeObjIdx; // 0 plane object index
+	int m_tileObjIdx;  // 0 tile object index
     int m_cubeObjIdx;  // 0 cube object index
+    int m_planeObjIdx; // 0 plane object index
 	int m_floorObjIdx; //0 floor object index
 	int m_skyIdx;      // 0 skybox index
 	int m_lightObjIdx; // 0 light object index

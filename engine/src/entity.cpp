@@ -40,10 +40,6 @@ void Entity::loadShader(Shader* shader, const glm::mat4& view, const glm::mat4& 
     shader->setMat4("view", view);
 }
 
-//void Entity::CreateSkyBox(std::vector<std::unique_ptr<GameObj>>& entVector,
-//    int& currentIndex, int& skyObjIdx, const std::string& folderPath, const std::string& skyFile, const glm::vec3& position)
-//{
-//}
 
 // construct a skybox entity from a file path (for now, we can just set up the cube geometry and load a cubemap texture;
 // the actual shader and rendering will be handled in RenderSkyBox)
@@ -257,14 +253,7 @@ void Entity::RenderGltfModel(Shader* shader, const glm::mat4& view, const glm::m
                     glBindTexture(GL_TEXTURE_2D, tex);
                 }
 
-               // bool hasTex = (sub.textures.find("baseColor") != sub.textures.end() && sub.textures.at("baseColor") != 0);
-                /*LOG_INFO("GLTF submesh: hasTex=" << hasTex
-                    << " baseColor=" << sub.baseColorFactor.r << "," << sub.baseColorFactor.g << "," << sub.baseColorFactor.b
-                    << " shininess=" << sub.shininess
-                    << " specular=" << sub.specularFactor.r << "," << sub.specularFactor.g << "," << sub.specularFactor.b
-                    << " indexCount=" << sub.indexCount
-                    << " texturesCount=" << sub.textures.size());*/
-
+               
                 // draw submesh
                 if (sub.vao != 0 && sub.indexCount > 0) {
                     glBindVertexArray(sub.vao);
@@ -556,6 +545,114 @@ void Entity::RenderPlane(Shader* shader, const glm::mat4& view, const glm::mat4&
             plane->DrawPlane();
 
             if (plane->tex_ID) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
+        }
+    }
+    // reset selection uniform (optional)
+    shader->SetUniformInt("u_selected", 0);
+}
+
+//void Entity::CreateTile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& tileIdx, const glm::vec3& position)
+//{
+//    stbi_set_flip_vertically_on_load(true);
+//
+//    auto newTile = std::make_unique<TerrainTile>(currentIndex, "Default Tile", tileIdx);
+//
+//    newTile->position = position;
+//    newTile->scale = glm::vec3(1.0f);
+//
+//
+//    // Build TRS: translate * rotate * scale (no rotation here)
+//    newTile->modelMatrix = glm::translate(glm::mat4(1.0f), newTile->position);
+//    newTile->modelMatrix = glm::scale(newTile->modelMatrix, newTile->scale);
+//
+//    //// Load texture via SetTextureForGameObj
+//    std::string texPath = GetAssetPath(TEXTURE_PATH);
+//    std::string texFile = "crate.jpg";
+//    std::string full = texPath + texFile;
+//
+//    if (!SetTextureForGameObj(newTile.get(), full)) {
+//        LOG_WARNING("CreateCube: Failed to set texture: " << full);
+//        // newCube->tex_ID remains 0; shader should handle missing texture
+//    }
+//    else {
+//        LOG_INFO("CreateCube: texture loaded tex_ID=" << newTile->tex_ID << " path=" << newTile->texPath);
+//    }
+//
+//    entVector.push_back(std::move(newTile));
+//    ++currentIndex;
+//    ++tileIdx;
+//}
+
+void Entity::CreateTile(std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& tileIdx,
+    const glm::vec3& position, bool includeSides, const std::string& topTexturePath)
+{
+    auto newTile = std::make_unique<TerrainTile>(currentIndex, "TerrainTile", tileIdx, includeSides);
+    newTile->position = position;
+    newTile->scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    newTile->modelMatrix = glm::translate(glm::mat4(1.0f), newTile->position);
+    newTile->modelMatrix = glm::scale(newTile->modelMatrix, newTile->scale);
+
+    std::string texPath = GetAssetPath(TEXTURE_PATH);
+    std::string texFile = "crate.jpg";
+    std::string full = texPath + texFile;
+
+    // assign texture if provided
+    if (!full.empty()) {
+        if (!SetTextureForGameObj(newTile.get(), full)) {
+            LOG_WARNING("CreateTerrainTile: failed to set texture: " << full);
+        }
+    }
+
+    entVector.push_back(std::move(newTile));
+    ++currentIndex;
+    ++tileIdx;
+}
+
+void Entity::RenderTile(Shader* shader, const glm::mat4& view, const glm::mat4& projection,
+    std::vector<std::unique_ptr<GameObj>>& entVector, int& currentIndex, int& tileIdx, int& selectedEntityId)
+{
+    if (!shader) {
+        LOG_WARNING("Entity::RenderPlane called without shader; skipping draw.");
+        return;
+    }
+
+    loadShader(shader, view, projection);
+
+    // Render stored planes using their stored modelMatrix and persistent texture id
+    for (const auto& model : entVector) {
+        if (!model) continue;
+
+        // Skip invisible objects early
+        if (!model->isVisible) continue;
+
+        if (auto* tile = dynamic_cast<TerrainTile*>(model.get())) {
+            // Use the pre-calculated model matrix (don't reset it)
+            shader->setMat4("model", tile->modelMatrix);
+
+            // Set selection uniform: compare entity id
+            int isSelected = (tile->entId == selectedEntityId) ? 1 : 0;
+            shader->SetUniformInt("u_selected", isSelected);
+            shader->setVec3("u_highlightColor", glm::vec3(0.2, 0.2f, 0.8f)); // orange-ish
+
+            // Does this object have a texture?
+            bool hasTex = (tile->tex_ID != 0);
+            shader->SetUniformInt("u_useTexture", hasTex ? 1 : 0);
+
+            if (hasTex) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, tile->tex_ID);
+            }
+            else {
+                // optionally give each object an albedo color (fallback)
+                // you can expose a per-object color in GameObj, for now use white
+                shader->setVec3("u_albedo", glm::vec3(1.0f, 1.0f, 1.0f));
+            }
+
+            tile->DrawTile();
+
+            if (tile->tex_ID) {
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
         }

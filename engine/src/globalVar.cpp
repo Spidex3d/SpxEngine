@@ -29,6 +29,8 @@ const int SKY_OBJ = 30; // for skybox
 std::string modelPathObj = "";
 
 const int OBJ_FLOOR = 20; // a large plane to serve as the floor.
+const int OBJ_TILE = 21;  // a smaller cube to serve as a tile for floor or wall construction,
+//can be repeated and textured for variety without needing large textures or UV mapping
 // Lighting
 const int OBJ_LIGHT = 40;
 const int OBJ_LIGHT_AMBIENT = 41;

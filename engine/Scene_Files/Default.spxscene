@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "entities": [
+    {
+      "id": 0,
+      "name": "Default Floor",
+      "typeId": 20,
+      "texPath": "C:\\Users\\marty\\Desktop\\SPXEngine\\SPXEngine\\SpxEngine\\engine\\assets\\textures\\texture\\stone.jpg",
+      "position": [0, -0.5, 0],
+      "rotation": [0, 0, 0],
+      "scale": [10, 0.1, 10],
+      "rotating": false,
+      "visible": true,
+      "collidable": true
+    },
+    {
+      "id": 1,
+      "name": "Default Cube",
+      "typeId": 1,
+      "texPath": "C:\\Users\\marty\\Desktop\\SPXEngine\\SPXEngine\\SpxEngine\\engine\\assets\\textures\\texture\\crate.jpg",
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "rotating": false,
+      "visible": true,
+      "collidable": true
+    },
+    {
+      "id": 2,
+      "name": "Ambient Light",
+      "typeId": 40,
+      "texPath": "C:\\Users\\marty\\Desktop\\SPXEngine\\SPXEngine\\SpxEngine\\engine\\src\\Effects\\sun_01.png",
+      "position": [0, 3, 0],
+      "rotation": [0, 0, 0],
+      "scale": [0.2, 0.2, 0.2],
+      "rotating": false,
+      "visible": true,
+      "collidable": true
+    },
+    {
+      "id": 3,
+      "name": "Skybox",
+      "typeId": 30,
+      "assetPath": "C:/Users/marty/Desktop/Models/Textures/Skybox/NewSky/Cubemap_Sky_07.png",
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "rotating": false,
+      "visible": true,
+      "collidable": true
+    }
+  ]
+}

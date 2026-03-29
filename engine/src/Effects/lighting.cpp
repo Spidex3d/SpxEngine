@@ -30,6 +30,8 @@ int LightManager::AddAmbient(const glm::vec3& apos, const glm::vec3& color, floa
 }
 
 int LightManager::AddSpot(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& color, float intensity, float cutoffCos) {
+    
+    
     Light L;
     L.id = m_nextId++;
     L.type = LightType::Spot;
